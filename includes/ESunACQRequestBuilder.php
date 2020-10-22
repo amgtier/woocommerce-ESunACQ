@@ -19,6 +19,10 @@ class ESunACQRequestBuilder {
         $this -> endpoint = !$test_mode ? new Endpoint() : new Endpoint_Test();
     }
 
+    public function get_endpoint(  ){
+        return Endpoint_Test::PC_AUTHREQ;
+    }
+
     public function place_order( $ONO, $TA, $U, $IC=null, $BPF=null ) {
         return $this -> type4_auth( $ONO, $TA, $U, $IC, $BPF );
     }
@@ -28,7 +32,6 @@ class ESunACQRequestBuilder {
     }
 
     private function type4_auth( $ONO, $TA, $U, $IC, $BPF, $return_data=false ) {
-        $U = 'http://nuan.vatroc.net/wc-api/wc_gateway_esunacq/';
         $data = [
             'data' => json_encode( $this -> pack( $ONO, $TA, $U, $IC, $BPF ) )
         ];

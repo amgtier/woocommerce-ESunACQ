@@ -14,9 +14,11 @@ class WC_Gateway_ESunACQ extends WC_Payment_Gateway {
     public $card_last_digits;
     public $request_builder;
     public $ESunHtml;
+    private $len_ono_prefix = 16; # AWYYYYMMDDHHMMSS
 
     public function __construct() {
         require_once 'Endpoint.php';
+        require_once 'ReturnMesg.php';
         $this -> init();
         if (empty($this -> store_id) || empty($this -> mac_key) ){
             $this -> enabled = 'no';
@@ -57,7 +59,7 @@ class WC_Gateway_ESunACQ extends WC_Payment_Gateway {
         $this -> card_last_digits = ( $this -> get_option( 'card_last_digits' ) === 'yes' ) ? true : false;
     }
 
-    public function thankyou_order_received_text() {
+    public function thankyou_order_received_text( $args ) {
         return "<h1>Thank you page.</h1>";
     }
 
@@ -65,13 +67,7 @@ class WC_Gateway_ESunACQ extends WC_Payment_Gateway {
         global $woocommerce, $ESunHtml;
 
         $order = new WC_Order( $order_id );
-
-        $new_order_id = 'AW' . date('Ymd') . $order -> get_order_number();
-        $amount = ceil( $order -> get_total() );
-        $return_url = $this -> get_return_url( $order );
-
         $order -> update_status( 'pending', __( 'Awaiting ESun Payment', 'esunacq' ) );
-        // $order -> add_order_note( sprintf( '%s %s', __( 'Order No :' ), $order_id ) );
 
         return array(
             'result' => 'success',
@@ -88,10 +84,10 @@ class WC_Gateway_ESunACQ extends WC_Payment_Gateway {
         }
 
         $order = new WC_Order( $order_id );
-        $new_order_id = 'AW' . date('Ymd') . $order -> get_order_number();
+        // $this -> len_ono_prefix = 14;
+        $new_order_id = 'AW' . date('YmdHis') . $order -> get_order_number();
         $amount = ceil( $order -> get_total() );
-        $return_url = $this -> get_return_url( $order );
-        $res = $this -> request_builder -> json_order( $new_order_id, $amount, $return_url );
+        $res = $this -> request_builder -> json_order( $new_order_id, $amount, 'http://nuan.vatroc.net/wc-api/wc_gateway_esunacq/' );
 
         echo sprintf("
             <form id='esunacq' method='post' action='%s'>
@@ -102,8 +98,10 @@ class WC_Gateway_ESunACQ extends WC_Payment_Gateway {
             <script>
                 var esunacq_form = document.getElementById('esunacq');
                 esunacq_form.submit();
-            </script>",
-            Endpoint_Test::PC_AUTHREQ,
+            </script>
+            ",
+            $this -> request_builder -> get_endpoint(),
+            // Endpoint_Test::PC_AUTHREQ,
             $res['data'],
             $res['mac']
         );
@@ -111,35 +109,75 @@ class WC_Gateway_ESunACQ extends WC_Payment_Gateway {
     }
 
     public function handle_response( $args ){
-        // global $woocommerce;
-        // if (!array_key_exists('DATA', $_GET)){
-        //     throw new Exception( 'Param DATA not found.' );
-        //     exit;
-        // }
+        global $woocommerce;
+        if ( !array_key_exists('DATA', $_GET) ){
+            throw new Exception( 'Param DATA not found.' );
+            exit;
+        }
 
-        // preg_match_all('/(?<key>\w+)=(?<value>\w+),*/', $_GET['DATA'], $match);
+        preg_match_all('/(?<key>\w+)=(?<value>\w+),*/', $_GET['DATA'], $match);
 
-        // $DATA = [];
-        // for ($i = 0; $i < count($match); $i++){
-        //     $DATA[$match["key"][$i]] = $match["value"][$i];
-        // }
+        $DATA = [];
+        for ($i = 0; $i < count($match["key"]); $i++){
+            $DATA[$match["key"][$i]] = $match["value"][$i];
+        }
 
-        // if (!array_key_exists('RC', $DATA) || $DATA['RC'] != 00){
-        //     throw new Exception( sprintf('Return Code: <%s>', $DATA['RC']) );
-        //     exit;
-        // }
-        // if (!array_key_exists('MID', $DATA) || $DATA['MID'] != $this -> request_builder -> store_id){
-        //     throw new Exception( sprintf('Store ID incorrect. Got: %s', $DATA['MID']) );
-        //     exit;
-        // }
-        // if (!array_key_exists('ONO', $DATA)){
-        //     throw new Exception( sprintf('Order No incorrect. Got: %s', $DATA['ONO']) );
-        //     exit;
-        // }
+        if (!array_key_exists('RC', $DATA)){
 
-        // // wc_reduce_stock_levels( $order_id );
-        // // $woocommerce -> cart -> empty_cart();
-        return 0;
+            throw new Exception( sprintf('Return Code: <%s>', $DATA['RC']) );
+            exit;
+        }
+        if (!array_key_exists('MID', $DATA) || $DATA['MID'] != $this -> request_builder -> store_id){
+            throw new Exception( sprintf('Store ID incorrect. Got: %s', $DATA['MID']) );
+            exit;
+        }
+        if (!array_key_exists( 'ONO', $DATA )){
+            throw new Exception( sprintf( 'Order No Not Found.') );
+            exit;
+        }
+
+        $order_id = substr( $DATA['ONO'], $this -> len_ono_prefix );
+        $order = new WC_Order( $order_id );
+
+
+        if ($DATA['RC'] != "00"){
+            $order->update_status('failed');
+            wc_add_notice( sprintf( '%s', ReturnMesg::CODE[ $DATA[ 'RC' ] ] ), 'error' );
+            wp_redirect( $order -> get_cancel_order_url() );
+            // throw new Exception( sprintf( "Error: %s", ReturnMesg::CODE[ $DATA[ 'RC' ] ] ) );
+            exit;
+        }
+        else{
+            if ( !array_key_exists('MACD', $_GET) ){
+                throw new Exception( 'MACD not found.' );
+                exit;
+            }
+
+            // if ( !$this -> request_builder -> check_hash( $_GET['DATA'], $_GET['MACD'] ));
+        }
+
+        foreach ([
+            'RRN' => 'RRN',
+            'AIR' => 'AIR',
+            'AN' => 'AN',
+        ] as $key => $name ){
+            if (!array_key_exists( $key, $DATA )){
+                throw new Exception( sprintf( '%s No Not Found.', $name) );
+                exit;
+            }
+        }
+        wc_reduce_stock_levels( $order_id );
+        // $woocommerce -> cart -> empty_cart();
+
+        $pay_type_note = '信用卡 付款（一次付清）';
+        $pay_type_note .= sprintf('<br>末四碼：%s', $DATA['AN']);
+        $pay_type_note .= sprintf('<br>RRN：%s', $DATA['RRN']);
+
+        $order->add_order_note($pay_type_note, true);
+        $order->update_status('processing');
+        $order->payment_complete();
+        wp_redirect( $order -> get_checkout_order_received_url() );
+        exit;
     }
 
     public function RENDER_ESUN_buffer_start() {
@@ -156,16 +194,17 @@ class WC_Gateway_ESunACQ extends WC_Payment_Gateway {
     }
 
     public function log( $message, $level='info' ) {
-        if ( $this -> log_enabled ) {
-            if ( empty( $this -> logging ) ) {
-                $this -> logging = wc_get_logger();
-            }
-            $this -> log( 
-                $level, 
-                $message, 
-                [ 'source' => 'esunacq' ] 
-            );
-        }
+        // if ( $this -> log_enabled ) {
+        //     if ( empty( $this -> logging ) ) {
+        //         $this -> logging = wc_get_logger();
+        //     }
+        //     $this -> log( 
+        //         $level, 
+        //         $message, 
+        //         [ 'source' => 'esunacq' ] 
+        //     );
+        // }
+        error_log( $message );
     }
 }
 
