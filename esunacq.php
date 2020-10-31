@@ -27,5 +27,4 @@ function esunacq_gateway_init(){
 
     $languages_rel_path = basename( dirname(__FILE__) ) . '/languages';
     load_plugin_textdomain( 'esunacq', false, $languages_rel_path );
-
 }

@@ -49,14 +49,14 @@ class WC_Gateway_ESunACQ_Settings {
                 'title' => __( 'Save Logs', 'woocommerce' ),
                 'label' => __( 'Enable', 'woocommerce' ),
                 'type' => 'checkbox',
-                'description' => sprintf( __( 'Enable logging at %s', 'esunacq' ), '<code>' . WC_Log_Handler_File::get_log_file_path( 'esunacq' . '</code>' ) ),
+                'description' => sprintf( __( 'Enable logging at %s', 'esunacq' ), '<code>' . WC_Log_Handler_File::get_log_file_path( 'esunacq') . '</code>' ),
                 'default' => 'no'
             ),
-            'card_last_digits' => array(
-                'title' => __( 'Card Last 4 Digits', 'woocommerce' ),
+            'store_card_digits' => array(
+                'title' => __( 'Store Card Digits', 'woocommerce' ),
                 'label' => __( 'Enable', 'woocommerce' ),
                 'type' => 'checkbox',
-                'description' => __( "Save the last 4 digits of buyer's credit card at order note.", 'esunacq' ),
+                'description' => __( "Save the first 6 and last 4 digits of buyer's card number at order note.", 'esunacq' ),
                 'default' => 'yes'
             ),
             'store_id' => array(
@@ -85,12 +85,12 @@ class WC_Gateway_ESunACQ_Settings {
             //     'description' => __( "Enable/Disable BPF.", 'esunacq' ),
             //     'default' => 'no',
             // ),
-            'thankyou_order_received_text' => array(
-                'title' => __( 'Order Received Text', 'esunacq' ),
-                'type' => 'textarea',
-                'description' => __( 'The message is shown at order success.', 'esunacq' ),
-                'default' => ''
-            ),
+            // 'thankyou_order_received_text' => array(
+            //     'title' => __( 'Order Received Text', 'esunacq' ),
+            //     'type' => 'textarea',
+            //     'description' => __( 'The message is shown at order success.', 'esunacq' ),
+            //     'default' => ''
+            // ),
         );
     }
 }

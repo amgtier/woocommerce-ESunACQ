@@ -8,7 +8,6 @@ class ESunACQRequestBuilder {
 
     private $stord_id;
     private $mac_key;
-    private $endpoint;
 
     public function __construct( $store_id, $mac_key, $test_mode=false ) {
         require_once 'TxnType.php';
@@ -16,43 +15,72 @@ class ESunACQRequestBuilder {
 
         $this -> store_id = $store_id;
         $this -> mac_key = $mac_key;
-        $this -> endpoint = !$test_mode ? new Endpoint() : new Endpoint_Test();
+        $this -> test_mode = $test_mode;
     }
 
-    public function get_endpoint(  ){
-        return Endpoint_Test::PC_AUTHREQ;
-    }
-
-    public function place_order( $ONO, $TA, $U, $IC=null, $BPF=null ) {
-        return $this -> type4_auth( $ONO, $TA, $U, $IC, $BPF );
+    public function get_endpoint( $name = '' ){
+        switch ( $name ){
+            case 'PC_AUTHREQ':
+                return !$this -> test_mode ? Endpoint::PC_AUTHREQ : Endpoint_Test::PC_AUTHREQ;
+            case 'REFUNDREQ':
+                return !$this -> test_mode ? Endpoint::REFUNDREQ : Endpoint_Test::REFUNDREQ;
+            case 'QUERY':
+                return !$this -> test_mode ? Endpoint::QUERY : Endpoint_Test::QUERY;
+        }
     }
 
     public function json_order( $ONO, $TA, $U, $IC=null, $BPF=null ) {
-        return $this -> type4_auth( $ONO, $TA, $U, $IC, $BPF, true );
-    }
-
-    private function type4_auth( $ONO, $TA, $U, $IC, $BPF, $return_data=false ) {
         $data = [
             'data' => json_encode( $this -> pack( $ONO, $TA, $U, $IC, $BPF ) )
         ];
-        $data['mac'] = $this -> packmd5( $data['data'] );
+        $data['mac'] = $this -> packs_sha256( $data['data'] );
         $data['ksn'] = 1;
-        if ( $return_data ){
-            return $data;
-        }
+        return $data;
+    }
 
-        $res = $this -> post_request( Endpoint_Test::PC_AUTHREQ, $data  );
+    public function request_refund( $ONO ) {
+        $data = [
+            'data' => json_encode( $this -> pack( $ONO, null, null, null, null ) )
+        ];
+        $data['mac'] = $this -> packs_sha256( $data['data'] );
+        $data['ksn'] = 1;
+        $res = $this -> post_request( $this -> get_endpoint( 'REFUNDREQ' ), $data  );
         return $res;
+    }
+
+    public function request_query( $ONO ){
+        $data = [
+            'data' => json_encode( $this -> pack( $ONO, null, null, null, null ) )
+        ];
+        $data['mac'] = $this -> packs_sha256( $data['data'] );
+        $data['ksn'] = 1;
+        $res = $this -> post_request( $this -> get_endpoint( 'QUERY' ), $data  );
+        return $res;
+    }
+
+    public function check_hash( $data, $mac ){
+        // error_log("my mac:");
+        // error_log($data . ',' . $this -> mac_key);
+        // error_log($this -> packs_sha256( $data . ',' . $this -> mac_key ));
+        // error_log("their mac:");
+        // error_log($mac);
+        return $this -> packs_sha256( $data . ',' . $this -> mac_key ) == $mac;
     }
 
     private function pack( $ONO, $TA, $U, $IC, $BPF ) {
         $data = [
             'MID' => $this -> store_id,
-            'TID' => TxnType::GENERAL,
             'ONO' => $ONO,
-            'TA'  => $TA,
-            'U'   => $U
         ];
+        if ( $TA != null ){
+            $data[ 'TA' ] = $TA;
+        }
+        if ( $U != null ){
+            $data[ 'U' ] = $U;
+        }
+        if ( $TA != null && $U != null ){
+            $data[ 'TID' ] = TxnType::GENERAL;
+        }
         if ( $IC != null ){
             $data[ 'IC' ] = $IC;
             $data[ 'TID' ] = TxnType::INSTALLMENT;
@@ -63,16 +91,14 @@ class ESunACQRequestBuilder {
         return $data;
     }
 
-    private function packmd5( $data ) {
-        // return md5( $data . $this -> mac_key );
+    private function packs_sha256( $data ) {
         return hash( 'sha256', $data . $this -> mac_key );
     }
 
     private function post_request( $endpoint, $data ) {
         $res = wp_remote_post( $endpoint, [
-            'headers' => [ 
-                'Content-type' => 'application/json',
-                'User-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0' 
+            'headers' => [
+                'user-agent' => ''
             ],
             'body' => $data
         ]);
