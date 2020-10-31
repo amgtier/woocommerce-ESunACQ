@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class WC_Gateway_ESunACQ extends WC_Payment_Gateway {
+class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
 
     public $store_id;
     public $mac_key;
@@ -14,7 +14,7 @@ class WC_Gateway_ESunACQ extends WC_Payment_Gateway {
     public $ESunHtml;
     public static $log_enabled = false;
     public static $log = false;
-    public static $order_recv_text;
+    public static $customize_order_received_text    ;
     private $len_ono_prefix = 16; # AWYYYYMMDDHHMMSS
 
     public function __construct() {
@@ -31,13 +31,8 @@ class WC_Gateway_ESunACQ extends WC_Payment_Gateway {
                 $this -> test_mode
             );
         }
-
-
-        add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
         add_action( 'woocommerce_api_' . strtolower( get_class( $this ) ), array( $this, 'handle_response' ) );
-        add_action( 'woocommerce_api_esunacq_get_order_form_data', array( $this, 'make_order_form_data' ) );
         add_filter( 'https_ssl_verify', '__return_false' );
-        add_filter( 'wocommerce_thankyou_order_received_text',  array( $this, 'thankyou_order_received_text' ) );
     }
 
     public function init() {
@@ -58,89 +53,33 @@ class WC_Gateway_ESunACQ extends WC_Payment_Gateway {
         $this -> test_mode      = ( $this -> get_option( 'test_mode' ) ) === 'yes' ? true : false;
         $this -> store_card_digits = ( $this -> get_option( 'store_card_digits' ) === 'yes' ) ? true : false;
         self::$log_enabled      = ( $this -> get_option( 'logging' ) ) === 'yes' ? true : false;
-        self::$order_recv_text = $this -> get_option( 'thankyou_order_received_text' );
+        self::$customize_order_received_text = $this -> get_option( 'thankyou_order_received_text' );
+        $this -> get_order_from_data = $this -> id .'_get_order_form_data';
+        add_action( 'woocommerce_api_' . $this -> get_order_from_data , array( $this, 'make_order_form_data' ) );
+        add_action( 'woocommerce_update_options_payment_gateways_' . $this -> id, array( $this, 'process_admin_options' ) );
     }
 
-    public static function thankyou_order_received_text( $args ) {
-        // error_log( $this -> order_recv_text );
-        // if ( strlen( $this -> order_recv_text ) > 0 ){
-            return sprintf( "<p>AAAMY ORDER RECEIVED TEXT</p><p>%s</p>", $this -> get_option( 'thankyou_order_received_text' ) );
-        // }
-    }
+    // public function process_refund( $order_id, $amount = null, $reason = '' ) {
 
-    public function process_payment( $order_id ) {
-        global $woocommerce, $ESunHtml;
+    //     $esun_order_id = get_post_meta( $order_id, '_esunacq_orderid', true );
+    //     $order = new WC_Order( $order_id );
 
-        $order = new WC_Order( $order_id );
-        $order -> update_status( 'pending', __( 'Awaiting ESun Payment', 'esunacq' ) );
+    //     $res = $this -> request_builder -> request_refund( $esun_order_id );
+    //     $DATA = $this -> get_api_DATA( $res );
 
-        return array(
-            'result' => 'success',
-            'redirect' => get_site_url() . '/wc-api/esunacq_get_order_form_data/?order_id=' . $order_id,
-        );
-    }
-
-    public function process_refund( $order_id, $amount = null, $reason = '' ) {
-
-        $esun_order_id = get_post_meta( $order_id, '_esunacq_orderid', true );
-        $order = new WC_Order( $order_id );
-
-        $res = $this -> request_builder -> request_refund( $esun_order_id );
-        $DATA = $this -> get_api_DATA( $res );
-
-        $refund_note = '';
-        if ( $DATA[ 'returnCode' ] == '00' ){
-            $txnData = $DATA[ 'txnData' ];
-            if ( !$this -> check_MID_ONO( $txnData, $order, $esun_order_id, '退款' ) ){
-                return false;
-            }
-            if ( $txnData[ 'RC' ] == "00" ){
-                $refund_note .= sprintf( '訂單交易日期: %s<br>', $txnData[ 'LTD' ]);
-                $refund_note .= sprintf( '訂單交易時間: %s<br>', $txnData[ 'LTT' ]);
-                $refund_note .= sprintf( '簽單序號: %s<br>', $txnData[ 'RRN' ]);
-                $refund_note .= sprintf( '授權碼: %s<br>', $txnData[ 'AIR' ]);
-                $order -> add_order_note( $refund_note, true );
-            }
-            else{
-                $refund_note .= sprintf( '退款失敗：%s<br>', ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
-                $order->add_order_note( $refund_note, true );
-                return false;
-            }
-        }
-        else if ( $DATA[ 'returnCode' ] == 'GF' ){
-            $refund_note .= sprintf( '退款失敗：%s<br>', ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
-
-            $Qres = $this -> request_builder -> request_query( $esun_order_id );
-            $QDATA = $this -> get_api_DATA( $Qres );
-            if ($QDATA[ 'returnCode' ] == '00' ){
-                $QtxnData = $QDATA[ 'txnData' ];
-                if ( !$this -> check_MID_ONO( $QtxnData, $order, $esun_order_id, '查詢' ) ){
-                    return false;
-                }
-                if ( $QtxnData[ 'RC' ] == '49' ){
-                    $order -> update_status( 'refunded' );
-                    $refund_note .= '已退款<br>';
-                    $order->add_order_note( $refund_note, true );
-                    return false;
-                }
-            }
-            else{
-                $refund_note .= sprintf( '查詢失敗：%s', ReturnMesg::CODE[ $QDATA[ 'returnCode' ] ] );
-                $order->add_order_note( $refund_note, true );
-                return false;
-            }
-            $refund_note .= sprintf( '退款失敗：%s', ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
-            $order->add_order_note( $refund_note, true );
-            return false;
-        }
-        else{
-            $refund_note .= sprintf( '退款失敗：%s', ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
-            $order->add_order_note( $refund_note, true );
-            return false;
-        }
-        $order -> update_status( 'refunded' );
-        return true;
-    }
+    //     if ( $DATA[ 'returnCode' ] == '00' ){
+    //         return $this -> refund_success( $order, $DATA, $esun_order_id );
+    //     }
+    //     else if ( $DATA[ 'returnCode' ] == 'GF' ){
+    //         return $this -> refund_failed_query( $order, $DATA, $esun_order_id );
+    //     }
+    //     else{
+    //         $refund_note = sprintf( '退款失敗：%s', ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
+    //         $order->add_order_note( $refund_note, true );
+    //         return false;
+    //     }
+    //     return false;
+    // }
 
     public function make_order_form_data() {
         if (array_key_exists('order_id', $_GET)){
@@ -186,38 +125,16 @@ class WC_Gateway_ESunACQ extends WC_Payment_Gateway {
         }
 
         $DATA = $this -> parse_returned_param( $_GET['DATA'] );
-        $DATA = $this -> parse_returned_param( $_GET['DATA'] );
-        $this -> check_RC_MID_NON( $DATA );
+        $this -> check_RC_MID_ONO( $DATA );
 
         $order_id = substr( $DATA['ONO'], $this -> len_ono_prefix );
         $order = new WC_Order( $order_id );
 
         if ($DATA['RC'] != "00"){
-            $order->update_status('failed');
-            wc_add_notice( sprintf( '%s', ReturnMesg::CODE[ $DATA[ 'RC' ] ] ), 'error' );
-            wp_redirect( $order -> get_cancel_order_url() );
-            $this -> log( sprintf( '%s', ReturnMesg::CODE[ $DATA[ 'RC' ] ] ) );
-            $this -> log( $DATA );
-            wp_redirect( '/' );
-            exit;
+            $this -> order_failed( $order, $DATA );
         }
         else{
-            if ( !array_key_exists('MACD', $_GET) ){
-                $order->update_status('failed');
-                wc_add_notice( 'MACD Not Found.', 'error' );
-                wp_redirect( $order -> get_cancel_order_url() );
-                wp_redirect( '/' );
-                exit;
-            }
-
-            if ( false && !$this -> request_builder -> check_hash( $_GET['DATA'], $_GET['MACD'] ) ){
-                $order->update_status('failed');
-                wc_add_notice( 'Inconsistent MACD.', 'error' );
-                $this -> log( 'Inconsistent MACD' );
-                $this -> log( $DATA );
-                wp_redirect( '/' );
-                exit;
-            }
+            $this -> check_mac( $order, $_GET, $_GET[ 'DATA' ], 'MACD' );
         }
 
         foreach ([
@@ -226,11 +143,11 @@ class WC_Gateway_ESunACQ extends WC_Payment_Gateway {
             'AN' => 'AN',
         ] as $key => $name ){
             if (!array_key_exists( $key, $DATA )){
-                $order->update_status('failed');
+                $order -> update_status('failed');
                 wc_add_notice( sprintf( '%s No Not Found.', $name), 'error' );
                 $this -> log( sprintf( '%s No Not Found.', $name) );
                 $this -> log( $DATA );
-                wp_redirect( '/' );
+                wp_redirect( $order -> get_cancel_order_url() );
                 exit;
             }
         }
@@ -243,100 +160,61 @@ class WC_Gateway_ESunACQ extends WC_Payment_Gateway {
         }
 
         add_post_meta( $order_id, '_esunacq_orderid', $DATA['ONO'] );
+
         $order -> add_order_note( $pay_type_note, true );
         $order -> update_status( 'processing' );
         $order -> payment_complete();
+
         wp_redirect( $order -> get_checkout_order_received_url() );
         exit;
     }
 
-    public function RENDER_ESUN_buffer_start() {
-        add_action( 'shutdown', 'RENDER_ESUN_buffer_stop', PHP_INT_MAX );
-        ob_start( 'RENDER_ESUN_content' );
-    }
-
-    public function RENDER_ESUN_buffer_stop() {
-        ob_end_flush();
-    }
-
-    public function RENDER_ESUN_content(  ) {
-        return $this -> result;
-    }
-
-    // public function log( $message, $level='info' ) {
-    //     // if ( $this -> log_enabled ) {
-    //     //     if ( empty( $this -> logging ) ) {
-    //     //         $this -> logging = wc_get_logger();
-    //     //     }
-    //     //     $this -> log( 
-    //     //         $level, 
-    //     //         $message, 
-    //     //         [ 'source' => 'esunacq' ] 
-    //     //     );
-    //     // }
-    //     if ( is_string( $message ) ){
-    //         error_log( $message );
-    //     }
-    //     else{
-    //         error_log( var_export( $message ) );
-    //     }
-    // }
-    public static function log($message, $level = 'info')
-    {
-        error_log("log_enabled");
-        error_log(self::$log_enabled);
-        if (self::$log_enabled) {
-            if (empty(self::$log)) {
-                self::$log = wc_get_logger();
-            }
-            self::$log->log($level, $message, array('source' => 'esunacq'));
-        }
-    }
-
-    private function parse_returned_param( $from ){
-        preg_match_all('/(?<key>\w+)=(?<value>\w+),*/', $from, $match);
-
-        $res = [];
-        for ($i = 0; $i < count($match["key"]); $i++){
-            $res[$match["key"][$i]] = $match["value"][$i];
-        }
-
-        return $res;
-    }
-
-    private function check_RC_MID_NON( $data ) {
-        if (!array_key_exists('RC', $data)){
-            wc_add_notice( 'Return Code Not Found' , 'error' );
-            wp_redirect( '/' );
-            exit;
-        }
-        if (!array_key_exists('MID', $data) || $data['MID'] != $this -> request_builder -> store_id ){
-            wc_add_notice( 'Store ID Incorrect' , 'error' );
-            $this -> log( sprintf( 'Store ID Incorrect, get: %s', $data['MID'] ) );
-            $this -> log( sprintf( $data ) );
-            wp_redirect( '/' );
-            exit;
-        }
-        if (!array_key_exists( 'ONO', $data )){
-            wc_add_notice( 'Order No. Not Found.' , 'error' );
-            $this -> log( sprintf( 'Order No. Not Found, get: %s', $data['ONO'] ) );
-            $this -> log( sprintf( $data ) );
-            wp_redirect( '/' );
-            exit;
-        }
-    }
-
-    private function check_MID_ONO( $data, $order, $ono, $op ){
-        if ( $data[ 'MID' ] != $this -> store_id || $data[ 'ONO' ] != $ono ){
-            $refund_note .= sprintf( 'MID(%s) 或 ONO(%s) 錯誤，退款失敗。<br>', $txnData[ 'MID' ], $txnData[ 'ONO' ] );
-            $order -> add_order_note( $refund_note, true );
+    private function refund_success( $order, $DATA, $esun_order_id ){
+        $txnData = $DATA[ 'txnData' ];
+        if ( !$this -> check_MID_ONO( $txnData, $order, $esun_order_id, '退款' ) ){
             return false;
         }
-        return true;
+        if ( $txnData[ 'RC' ] == "00" ){
+            $refund_note  = sprintf( '訂單交易日期: %s<br>', $txnData[ 'LTD' ]);
+            $refund_note .= sprintf( '訂單交易時間: %s<br>', $txnData[ 'LTT' ]);
+            $refund_note .= sprintf( '簽單序號: %s<br>', $txnData[ 'RRN' ]);
+            $refund_note .= sprintf( '授權碼: %s<br>', $txnData[ 'AIR' ]);
+            $order -> add_order_note( $refund_note, true );
+            $order -> update_status( 'refunded' );
+            return true;
+        }
+        else{
+            $refund_note .= sprintf( '退款失敗：%s<br>', ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
+            $order->add_order_note( $refund_note, true );
+            return false;
+        }
     }
 
-    private function get_api_DATA( $res ){
-        return json_decode(substr( $res, 5 ), true);
+    private function refund_failed_query( $order, $DATA, $esun_order_id ){
+        $refund_note= sprintf( '退款失敗：%s<br>', ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
+
+        $Qres = $this -> request_builder -> request_query( $esun_order_id );
+        $QDATA = $this -> get_api_DATA( $Qres );
+        if ($QDATA[ 'returnCode' ] == '00' ){
+            $QtxnData = $QDATA[ 'txnData' ];
+            if ( !$this -> check_MID_ONO( $QtxnData, $order, $esun_order_id, '查詢' ) ){
+                return false;
+            }
+            if ( $QtxnData[ 'RC' ] == '49' ){
+                $order -> update_status( 'refunded' );
+                $refund_note .= '已退款<br>';
+                $order->add_order_note( $refund_note, true );
+                return false;
+            }
+        }
+        else{
+            $refund_note .= sprintf( '查詢失敗：%s', ReturnMesg::CODE[ $QDATA[ 'returnCode' ] ] );
+            $order->add_order_note( $refund_note, true );
+            return false;
+        }
+
+        $order->add_order_note( $refund_note, true );
+        return false;
     }
 }
 

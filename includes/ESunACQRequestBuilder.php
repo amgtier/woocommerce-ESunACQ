@@ -26,6 +26,8 @@ class ESunACQRequestBuilder {
                 return !$this -> test_mode ? Endpoint::REFUNDREQ : Endpoint_Test::REFUNDREQ;
             case 'QUERY':
                 return !$this -> test_mode ? Endpoint::QUERY : Endpoint_Test::QUERY;
+            case 'UNIONPAY':
+                return !$this -> test_mode ? Endpoint::UNIONPAY : Endpoint_Test::UNIONPAY;
         }
     }
 
@@ -33,8 +35,46 @@ class ESunACQRequestBuilder {
         $data = [
             'data' => json_encode( $this -> pack( $ONO, $TA, $U, $IC, $BPF ) )
         ];
-        $data['mac'] = $this -> packs_sha256( $data['data'] );
-        $data['ksn'] = 1;
+        $data[ 'mac' ] = $this -> packs_sha256( $data['data'] );
+        $data[ 'ksn' ] = 1;
+        return $data;
+    }
+
+    public function up_json_action( $action, $ONO, $TA, $U, $TXXNO='' ){
+        $IC = null;  /* UnionPay does not have such options */
+        $BPF = null; /* UnionPay does not have such options */
+
+        $data = $this -> pack( $ONO, $TA, $U, $IC, $BPF );
+        $data[ 'CID' ] = '';
+        $data[ 'TT' ] = '';
+        switch (action) {
+            case 'order':
+                $data[ 'TT' ] = '01';
+                break;
+            case 'refund':
+                $data[ 'TT' ] = '04';
+                break;
+            case 'cancel':
+                $data[ 'TT' ] = '31';
+                break;
+            case 'query':
+                $data[ 'TT' ] = '00';
+                break;
+        }
+        $data[ 'TXNNO' ] = $TXXNO;
+
+        $data_to_mac  = sprintf( '%s&', $data[ 'MID' ] );
+        $data_to_mac .= sprintf( '%s&', $data[ 'CID' ] );
+        $data_to_mac .= sprintf( '%s&', $data[ 'ONO' ] );
+        $data_to_mac .= sprintf( '%s&', $data[ 'TA' ] );
+        $data_to_mac .= sprintf( '%s&', $data[ 'TT' ] );
+        if ( $data[ 'TT' ] != '00' ){
+            $data_to_mac .= sprintf( '%s&', $data[ 'U' ] );
+        }
+        $data_to_mac .= sprintf( '%s&', $data[ 'TXNNO' ] );
+        $data_to_mac .= $this -> mac_key;
+        $data[ 'M' ] = $this -> packs_md5( $data_to_mac );
+
         return $data;
     }
 
@@ -42,9 +82,15 @@ class ESunACQRequestBuilder {
         $data = [
             'data' => json_encode( $this -> pack( $ONO, null, null, null, null ) )
         ];
-        $data['mac'] = $this -> packs_sha256( $data['data'] );
-        $data['ksn'] = 1;
+        $data[ 'mac' ] = $this -> packs_sha256( $data['data'] );
+        $data[ 'ksn' ] = 1;
         $res = $this -> post_request( $this -> get_endpoint( 'REFUNDREQ' ), $data  );
+        return $res;
+    }
+
+    public function up_request_refund( $new_order_id, $amount, $txnno ) {
+        $data = $this -> up_json_action( 'refund', $new_order_id, $amount, '', $txnno );
+        $res  = $this -> post_request( $this -> get_endpoint( 'UNIONPAY' ), $data  );
         return $res;
     }
 
@@ -55,6 +101,12 @@ class ESunACQRequestBuilder {
         $data['mac'] = $this -> packs_sha256( $data['data'] );
         $data['ksn'] = 1;
         $res = $this -> post_request( $this -> get_endpoint( 'QUERY' ), $data  );
+        return $res;
+    }
+
+    public function up_request_query( $new_order_id, $txnno='' ) {
+        $data = $this -> up_json_action( 'query', $new_order_id, '', '', $txnno );
+        $res  = $this -> post_request( $this -> get_endpoint( 'UNIONPAY' ), $data  );
         return $res;
     }
 
@@ -93,6 +145,11 @@ class ESunACQRequestBuilder {
 
     private function packs_sha256( $data ) {
         return hash( 'sha256', $data . $this -> mac_key );
+    }
+
+
+    private function packs_md5( $data ) {
+        return hash( 'md5', $data . $this -> mac_key );
     }
 
     private function post_request( $endpoint, $data ) {

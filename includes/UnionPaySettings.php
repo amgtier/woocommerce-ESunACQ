@@ -11,7 +11,7 @@ class WC_Gateway_ESunACQ_Settings {
     public function add_settings_link( $links ) {
         $links[] = sprintf(
             '<a href="%s">%s</a>',
-            admin_url('admin.php?page=wc-settings&tab=checkout&section=esunacq'),
+            admin_url('admin.php?page=wc-settings&tab=checkout&section=unionpay'),
             __( 'Settings', 'woocommerce' )
         );
         return $links;
@@ -42,14 +42,14 @@ class WC_Gateway_ESunACQ_Settings {
                 'title' => __( 'Title', 'woocommerce' ),
                 'type' => 'text',
                 'description' => __('This controls the title which the user sees during checkout.', 'woocommerce'),
-                'default' => __('ESun ACQ', 'esunacq'),
+                'default' => __('UnionPay', 'esunacq'),
                 'desc_tip' => true
             ),
             'description' => array(
                 'title' => __('Description', 'woocommerce'),
                 'type' => 'textarea',
                 'description' => __('This controls the description which the user sees during checkout.', 'woocommerce'),
-                'default' => __('Pay with Credit Car through ESun Bank.', 'woocommerce')
+                'default' => __('Pay with Credit Car through UnionPay.', 'woocommerce')
             ),
             'test_mode' => array(
                 'title' => __( 'Test Mode', 'woocommerce' ),

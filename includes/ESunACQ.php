@@ -17,6 +17,7 @@ class WC_ESunACQ {
 
     public function add_gateway_class($method) {
         $method[] = 'WC_Gateway_ESunACQ';
+        $method[] = 'WC_Gateway_ESUnionPay';
         return $method;
     }
 }
