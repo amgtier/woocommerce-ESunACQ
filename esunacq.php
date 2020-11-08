@@ -6,6 +6,8 @@
  * Author URI: https://github.com/amgtier
  * Description: ESun ACQ for WooCommerce
  * Version: 0.1
+ * Text Domain: esunacq
+ * Domain Path: /languages/
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -27,13 +29,21 @@ function esunacq_gateway_init(){
 
     new WC_ESunACQ();
 
-    $languages_rel_path = basename( dirname(__FILE__) ) . '/languages';
-    load_plugin_textdomain( 'esunacq', false, $languages_rel_path );
+    function esunacq_load_textdomain() {
+        load_plugin_textdomain( 'esunacq', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
+    }
 
     function esunacq_order_received_text($text, $order)
     {
         return WC_Gateway_ESunACQ::$customize_order_received_text;
     }
 
+    function order_actions ( $arr ) {
+        $arr[ 'esunacq_query_status' ] = __( 'Query Order Status' );
+        return $arr;
+    }
+
+    add_action( 'plugins_loaded', 'esunacq_load_textdomain' );
     add_filter('woocommerce_thankyou_order_received_text', 'esunacq_order_received_text', 10, 2);
+    add_filter( 'woocommerce_order_actions', 'order_actions', 10, 2);
 }

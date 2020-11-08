@@ -23,7 +23,7 @@ class WC_Gateway_ESunACQ_Settings {
                 'title' => __( 'Enable/Disable', 'woocommerce' ),
                 'type' => 'checkbox',
                 'lable' => __( 'Enable', 'esunacq' ),
-                'description' => __('It is enabled only until both <code>Store ID</code> and <code>Mac Key</code> are nonempty.', 'woocommerce'),
+                'description' => __('It is enabled only until both <code>Store ID</code> and <code>Mac Key</code> are nonempty.', 'esunacq'),
                 'default' => 'no'
             ),
             'store_id' => array(
@@ -41,7 +41,7 @@ class WC_Gateway_ESunACQ_Settings {
             'title' => array(
                 'title' => __( 'Title', 'woocommerce' ),
                 'type' => 'text',
-                'description' => __('This controls the title which the user sees during checkout.', 'woocommerce'),
+                'description' => __('This controls the title which the user sees during checkout.', 'esunacq'),
                 'default' => __('UnionPay', 'esunacq'),
                 'desc_tip' => true
             ),
@@ -52,21 +52,21 @@ class WC_Gateway_ESunACQ_Settings {
                 'default' => __('Pay with Credit Car through UnionPay.', 'woocommerce')
             ),
             'test_mode' => array(
-                'title' => __( 'Test Mode', 'woocommerce' ),
+                'title' => __( 'Test Mode', 'esunacq' ),
                 'label' => __( 'Enable', 'woocommerce' ),
                 'type' => 'checkbox',
                 'description' => __( 'Enable the sandbox mode', 'esunacq' ),
                 'default' => 'no'
             ),
             'logging' => array(
-                'title' => __( 'Save Logs', 'woocommerce' ),
+                'title' => __( 'Save Logs', 'esunacq' ),
                 'label' => __( 'Enable', 'woocommerce' ),
                 'type' => 'checkbox',
-                'description' => sprintf( __( 'Enable logging at %s', 'esunacq' ), '<code>' . WC_Log_Handler_File::get_log_file_path( 'esunacq') . '</code>' ),
+                'description' => sprintf( __( 'Enable logging at %1s', 'esunacq' ), '<code>' . WC_Log_Handler_File::get_log_file_path( 'esunacq') . '</code>' ),
                 'default' => 'no'
             ),
             'store_card_digits' => array(
-                'title' => __( 'Store Card Digits', 'woocommerce' ),
+                'title' => __( 'Store Card Digits', 'esunacq' ),
                 'label' => __( 'Enable', 'woocommerce' ),
                 'type' => 'checkbox',
                 'description' => __( "Save the first 6 and last 4 digits of buyer's card number at order note.", 'esunacq' ),

@@ -9,12 +9,12 @@ class ESunACQRequestBuilder {
     private $stord_id;
     private $mac_key;
 
-    public function __construct( $store_id, $mac_key, $test_mode=false ) {
+    public function __construct( $store_id, $mac_key, $mac_key_test, $test_mode=false ) {
         require_once 'TxnType.php';
         require_once 'Endpoint.php';
 
         $this -> store_id = $store_id;
-        $this -> mac_key = $mac_key;
+        $this -> mac_key = $test_mode ? $mac_key_test : $mac_key;
         $this -> test_mode = $test_mode;
     }
 
@@ -35,7 +35,7 @@ class ESunACQRequestBuilder {
         $data = [
             'data' => json_encode( $this -> pack( $ONO, $TA, $U, $IC, $BPF ) )
         ];
-        $data[ 'mac' ] = $this -> packs_sha256( $data['data'] );
+        $data[ 'mac' ] = $this -> packs_esunacq( $data['data'] );
         $data[ 'ksn' ] = 1;
         return $data;
     }
@@ -47,7 +47,7 @@ class ESunACQRequestBuilder {
         $data = $this -> pack( $ONO, $TA, $U, $IC, $BPF );
         $data[ 'CID' ] = '';
         $data[ 'TT' ] = '';
-        switch (action) {
+        switch ($action) {
             case 'order':
                 $data[ 'TT' ] = '01';
                 break;
@@ -73,8 +73,10 @@ class ESunACQRequestBuilder {
         }
         $data_to_mac .= sprintf( '%s&', $data[ 'TXNNO' ] );
         $data_to_mac .= $this -> mac_key;
-        $data[ 'M' ] = $this -> packs_md5( $data_to_mac );
 
+        $data[ 'M' ] = $this -> packs_esunionpay( $data_to_mac );
+        // error_log(date('Y/m/d H:i:s'));
+        // error_log($data_to_mac);
         return $data;
     }
 
@@ -82,7 +84,7 @@ class ESunACQRequestBuilder {
         $data = [
             'data' => json_encode( $this -> pack( $ONO, null, null, null, null ) )
         ];
-        $data[ 'mac' ] = $this -> packs_sha256( $data['data'] );
+        $data[ 'mac' ] = $this -> packs_esunacq( $data['data'] );
         $data[ 'ksn' ] = 1;
         $res = $this -> post_request( $this -> get_endpoint( 'REFUNDREQ' ), $data  );
         return $res;
@@ -98,7 +100,7 @@ class ESunACQRequestBuilder {
         $data = [
             'data' => json_encode( $this -> pack( $ONO, null, null, null, null ) )
         ];
-        $data['mac'] = $this -> packs_sha256( $data['data'] );
+        $data['mac'] = $this -> packs_esunacq( $data['data'] );
         $data['ksn'] = 1;
         $res = $this -> post_request( $this -> get_endpoint( 'QUERY' ), $data  );
         return $res;
@@ -113,10 +115,10 @@ class ESunACQRequestBuilder {
     public function check_hash( $data, $mac ){
         // error_log("my mac:");
         // error_log($data . ',' . $this -> mac_key);
-        // error_log($this -> packs_sha256( $data . ',' . $this -> mac_key ));
+        // error_log($this -> packs_esunacq( $data . ',' . $this -> mac_key ));
         // error_log("their mac:");
         // error_log($mac);
-        return $this -> packs_sha256( $data . ',' . $this -> mac_key ) == $mac;
+        return $this -> packs_esunacq( $data . ',' . $this -> mac_key ) == $mac;
     }
 
     private function pack( $ONO, $TA, $U, $IC, $BPF ) {
@@ -143,13 +145,12 @@ class ESunACQRequestBuilder {
         return $data;
     }
 
-    private function packs_sha256( $data ) {
+    private function packs_esunacq( $data ) {
         return hash( 'sha256', $data . $this -> mac_key );
     }
 
-
-    private function packs_md5( $data ) {
-        return hash( 'md5', $data . $this -> mac_key );
+    private function packs_esunionpay( $data ) {
+        return hash( 'md5', $data );
     }
 
     private function post_request( $endpoint, $data ) {
