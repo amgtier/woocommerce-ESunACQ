@@ -128,7 +128,7 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
         $order = new WC_Order( $order_id );
         $new_order_id = 'AW' . date('YmdHis') . $order -> get_order_number();
         $amount = ceil( $order -> get_total() );
-        $res = $this -> request_builder -> json_order( $new_order_id, $amount, 'http://nuan.vatroc.net/wc-api/wc_gateway_esunacq/' );
+        $res = $this -> request_builder -> json_order( $new_order_id, $amount, get_home_url() . '/wc-api/wc_gateway_esunacq/' );
 
         // echo sprintf( "thankyou_order_received_text: %s<br>", $this -> get_option( 'thankyou_order_received_text' ) );
 
