@@ -29,25 +29,25 @@ class WC_Gateway_ESunACQ_Settings {
             'store_id' => array(
                 'title' => __( 'Store ID', 'esunacq' ),
                 'type' => 'text',
-                'description' => __( 'Store ID', 'esunacq' ),
+                'description' => __( 'Store ID provided by ESun Bank', 'esunacq' ),
                 'default' => ''
             ),
             'mac_key' => array(
                 'title' => __( 'Mac Key', 'esunacq' ),
                 'type' => 'text',
-                'description' => __( 'Mac Key', 'esunacq' ),
+                'description' => __( 'Mac Key provided by ESun Bank', 'esunacq' ),
                 'default' => ''
             ),
             'mac_key_test' => array(
                 'title' => __( 'Mac Key for Test Mode', 'esunacq' ),
                 'type' => 'text',
-                'description' => __( 'Mac key for test mode.', 'esunacq' ),
+                'description' => __( 'Mac Key for testing provided by ESun Bank', 'esunacq' ),
                 'default' => ''
             ),
             'title' => array(
                 'title' => __( 'Title', 'woocommerce' ),
                 'type' => 'text',
-                'description' => __('This controls the title which the user sees during checkout.', 'esunacq'),
+                'description' => __('This controls the title which the user sees during checkout', 'esunacq'),
                 'default' => __('ESun ACQ', 'esunacq'),
                 'desc_tip' => true
             ),

@@ -15,7 +15,6 @@ class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
     public static $log_enabled = false;
     public static $log = false;
     public static $customize_order_received_text;
-    // private $len_ono_prefix = 16; # AWYYYYMMDDHHMMSS
 
     public function __construct() {
         parent::__construct();
@@ -75,21 +74,21 @@ class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
         $order = new WC_Order( $order_id );
 
         $res = $this -> request_builder -> up_request_refund( $new_order_id, $amount, '', $txnno );
-        return true;
-        // $DATA = $this -> get_api_DATA( $res );
+        $DATA = $this -> parse_returned_param( $res );
 
-        // if ( $DATA[ 'returnCode' ] == '00' ){
-        //     return $this -> refund_success( $order, $DATA, $esun_order_id );
-        // }
-        // else if ( $DATA[ 'returnCode' ] == 'GF' ){
-        //     return $this -> refund_failed_query( $order, $DATA, $esun_order_id );
-        // }
-        // else{
-        //     $refund_note = sprintf( '退款失敗：%s', ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
-        //     $order->add_order_note( $refund_note, true );
-        //     return false;
-        // }
-        // return false;
+        if ( $DATA[ 'RC' ] == 'PC' ){
+            /* refund on process */
+            // wait for 1 sec
+            $this -> refund_query( $order, $esun_order_id );
+            // return $this -> refund_success( $order, $DATA, $esun_order_id );
+            // return false;
+        }
+        else{
+            $refund_note = sprintf( __( 'Refund failed: %s' ), ReturnMesg::UP_CODE[ $DATA[ 'RC' ] ] );
+            $order->add_order_note( $refund_note, true );
+            return false;
+        }            
+        return true;
     }
 
     public function make_order_form_data() {
@@ -106,6 +105,7 @@ class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
         $res = $this -> request_builder -> up_json_action( 'order', $new_order_id, $amount, '/wc-api/wc_gateway_esunionpay/' );
 
         echo sprintf( "
+            <p>%s</p>
             <form id='esunacq' method='post' action='%s'>
                 <input type='text' hidden name='MID' value='%s' />
                 <input type='text' hidden name='CID' value='%s' />
@@ -122,6 +122,7 @@ class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
                 // esunacq_form.submit();
             </script>
             ",
+            __( 'Redirecting to Esun Bank. Do not refresh or close the window.', 'esunacq' ),
             $this -> request_builder -> get_endpoint( 'UNIONPAY' ),
             $res[ 'MID' ],
             $res[ 'CID' ],
@@ -138,14 +139,14 @@ class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
     public function handle_response( $args ){
         $this -> check_RC_MID_ONO( $_GET );
 
-        $order_id = substr( $DATA[ 'ONO' ], $this -> len_ono_prefix );
+        $order_id = substr( $_GET[ 'ONO' ], $this -> len_ono_prefix );
         $order = new WC_Order( $order_id );
 
-        if ($DATA['RC'] != "00"){
-            $this -> order_failed( $order, $DATA );
+        if ($_GET['RC'] != "00"){
+            $this -> order_failed( $order, $_GET );
         }
         else{
-            $this -> check_mac( $order, $_GET, $_GET[ 'DATA' ], 'M' );
+            $this -> check_mac( $order, $_GET, $_GET, 'M' );
         }
 
         $required_fields = [
@@ -156,11 +157,11 @@ class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
             'TXNNO' => 'TXNNO',
         ];
         foreach ( $required_fields as $key => $name ){
-            if (!array_key_exists( $key, $DATA )){
+            if (!array_key_exists( $key, $_GET )){
                 $order -> update_status( 'failed' );
                 wc_add_notice( sprintf( __( '%s No Not Found.', 'esunacq' ), $name), 'error' );
                 $this -> log( sprintf( __( '%s No Not Found.', 'esunacq' ), $name) );
-                $this -> log( $DATA );
+                $this -> log( $_GET );
                 wp_redirect( $order -> get_cancel_order_url() );
                 exit;
             }
@@ -169,11 +170,11 @@ class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
 
         $pay_type_note = __( 'Pay by UnionPay (At once)', 'esunacq' );
         foreach ( $required_fields as $key => $name ){
-            $pay_type_note .= sprintf( '<br>%s：%s', $key, $DATA[ $key ] );
+            $pay_type_note .= sprintf( '<br>%s：%s', $key, $_GET[ $key ] );
         }
 
-        add_post_meta( $order_id, '_' . $this -> id . '_orderid', $DATA['ONO'] );
-        add_post_meta( $order_id, '_' . $this -> id . '_txnno'  , $DATA['TXNNO'] );
+        add_post_meta( $order_id, '_' . $this -> id . '_orderid', $_GET['ONO'] );
+        add_post_meta( $order_id, '_' . $this -> id . '_txnno'  , $_GET['TXNNO'] );
 
         $order -> add_order_note( $pay_type_note, true );
         $order -> update_status( 'processing' );
@@ -183,35 +184,8 @@ class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
         exit;
     }
 
-    public function handle_refund( $args ){
-
-        $this -> check_RC_MID_ONO( $_GET );
-
-        $order_id = substr( $DATA[ 'ONO' ], $this -> len_ono_prefix );
-        $order = new WC_Order( $order_id );
-
-        if ($DATA['RC'] != "00"){
-            $this -> order_failed( $order, $DATA );
-        }
-        else{
-            $this -> check_mac( $order, $_GET, $_GET[ 'DATA' ], 'M' );
-        }
-        if ( $DATA[ 'returnCode' ] == '00' ){
-            return $this -> refund_success( $order, $DATA, $esun_order_id );
-        }
-        // else if ( $DATA[ 'returnCode' ] == 'GF' ){
-        //     return $this -> refund_failed_query( $order, $DATA, $esun_order_id );
-        // }
-        else{
-            $refund_note = sprintf( __( 'Refund failed: %s', 'esunacq' ), ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
-            $order->add_order_note( $refund_note, true );
-            return false;
-        }
-        return false;
-    }
-
     private function refund_success( $order, $DATA, $esun_order_id ){
-        if ( !$this -> check_MID_ONO( $DATA, $order, $esun_order_id, '退款' ) ){
+        if ( !$this -> check_MID_ONO( $DATA, $order, $esun_order_id ) ){
             return false;
         }
         if ( $DATA[ 'RC' ] == "00" ){
@@ -221,34 +195,28 @@ class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
             return true;
         }
         else{
-            $refund_note .= sprintf( __( 'Refund failed: %s<br>', 'esunacq' ), ReturnMesg::CODE[ $DATA[ 'RC' ] ] );
+            $refund_note .= sprintf( __( 'Refund failed: %s<br>', 'esunacq' ), ReturnMesg::UP_CODE[ $DATA[ 'RC' ] ] );
             $order->add_order_note( $refund_note, true );
             return false;
         }
     }
 
-    private function refund_failed_query( $order, $DATA, $esun_order_id ){
-        $refund_note = sprintf( __( 'Refund failed: %s<br>', 'esunacq' ), ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
-
-        // $Qres = $this -> request_builder -> request_query( $esun_order_id );
-        // $QDATA = $this -> get_api_DATA( $Qres );
-        // if ($QDATA[ 'returnCode' ] == '00' ){
-        //     $QtxnData = $QDATA[ 'txnData' ];
-        //     if ( !$this -> check_MID_ONO( $QtxnData, $order, $esun_order_id, '查詢' ) ){
-        //         return false;
-        //     }
-        //     if ( $QtxnData[ 'RC' ] == '49' ){
-        //         $order -> update_status( 'refunded' );
-        //         $refund_note .= '已退款<br>';
-        //         $order->add_order_note( $refund_note, true );
-        //         return false;
-        //     }
-        // }
-        // else{
-        //     $refund_note .= sprintf( '查詢失敗：%s', ReturnMesg::CODE[ $QDATA[ 'returnCode' ] ] );
-        //     $order->add_order_note( $refund_note, true );
-        //     return false;
-        // }
+    private function refund_query( $order, $esun_order_id ){
+        $Qres = $this -> request_builder -> request_query( $esun_order_id );
+        $QDATA = $this -> parse_returned_param( $Qres );
+        if ($QDATA[ 'RC' ] == '00' ){
+            if ( !$this -> check_MID_ONO( $QtxnData, $order, $esun_order_id ) ){
+                return false;
+            }
+            $refund_note .= sprintf( __( 'UnionPay Status: %s <br>' ), ReturnMesg::UP_CODE[ $QDATA[ 'RC' ] ]);
+            $order->add_order_note( $refund_note, true );
+            return false;
+        }
+        else{
+            $refund_note = sprintf( '查詢失敗：%s', ReturnMesg::UP_CODE[ $QDATA[ 'RC' ] ] );
+            $order->add_order_note( $refund_note, true );
+            return false;
+        }
 
         $order -> add_order_note( $refund_note, true );
         return false;

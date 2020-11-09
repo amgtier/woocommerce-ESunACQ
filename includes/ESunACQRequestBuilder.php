@@ -156,7 +156,7 @@ class ESunACQRequestBuilder {
     private function post_request( $endpoint, $data ) {
         $res = wp_remote_post( $endpoint, [
             'headers' => [
-                'user-agent' => ''
+                'User-Agent' => ''
             ],
             'body' => $data
         ]);

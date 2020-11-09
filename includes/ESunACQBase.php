@@ -29,7 +29,7 @@ class WC_Gateway_ESunACQBase extends WC_Payment_Gateway {
         global $woocommerce, $ESunHtml;
 
         $order = new WC_Order( $order_id );
-        $order -> update_status( 'pending', sprintf( __( 'Awaiting %s Payment', 'esunacq' ) ), $this -> method_title );
+        $order -> update_status( 'pending', sprintf( __( 'Awaiting %s Payment', 'esunacq' ), $this -> method_title ) );
 
         return array(
             'result' => 'success',
@@ -57,8 +57,8 @@ class WC_Gateway_ESunACQBase extends WC_Payment_Gateway {
         if ( false && !$this -> request_builder -> check_hash( $data, $urlparam[ $mfkey ] ) ){
             $order -> update_status( 'failed' );
             wc_add_notice( __( 'Inconsistent ', 'esunacq' ) . $mfkey, 'error' );
-            $this ->  log( __( 'Inconsistent ', 'esunacq' ) . $mfkey );
-            $this ->  log( $data );
+            $this -> log( __( 'Inconsistent ', 'esunacq' ) . $mfkey );
+            $this -> log( $data );
             wp_redirect( $order -> get_cancel_order_url() );
             exit;
         }
@@ -89,7 +89,7 @@ class WC_Gateway_ESunACQBase extends WC_Payment_Gateway {
             exit;
         }
         if (!array_key_exists( 'ONO', $data )){
-            wc_add_notice( __( 'Order No. Not Found.', 'esunacq' ) , 'error' );
+            wc_add_notice( __( 'Order No. Not Found', 'esunacq' ) , 'error' );
             $this -> log( sprintf( __( 'Order No. Not Found', 'esunacq' ) ) );
             $this -> log( sprintf( $data ) );
             wp_redirect( '/' );
@@ -108,7 +108,7 @@ class WC_Gateway_ESunACQBase extends WC_Payment_Gateway {
     //     return true;
     // }
 
-    protected function check_MID_ONO( $data, $order, $ono, $op ){
+    protected function check_MID_ONO( $data, $order, $ono ){
         if ( $data[ 'MID' ] != $this -> store_id || $data[ 'ONO' ] != $ono ){
             $refund_note .= sprintf( __( 'MID(%s) or ONO(%s) Error. Refund failed.<br>', 'esunacq' ), $txnData[ 'MID' ], $txnData[ 'ONO' ] );
             $order -> add_order_note( $refund_note, true );
@@ -123,9 +123,7 @@ class WC_Gateway_ESunACQBase extends WC_Payment_Gateway {
 
     protected function order_failed( $order, $DATA ){
         $order -> update_status( 'failed' );
-
         wc_add_notice( sprintf( '%s', ReturnMesg::CODE[ $DATA[ 'RC' ] ] ), 'error' );
-
         $this -> log( sprintf( '%s', ReturnMesg::CODE[ $DATA[ 'RC' ] ] ) );
         $this -> log( $DATA );
         exit;

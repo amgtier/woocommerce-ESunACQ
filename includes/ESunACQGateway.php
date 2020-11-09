@@ -15,7 +15,6 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
     public static $log_enabled = false;
     public static $log = false;
     public static $customize_order_received_text    ;
-    // private $len_ono_prefix = 16; # AWYYYYMMDDHHMMSS
 
     public function __construct() {
         parent::__construct();
@@ -34,41 +33,6 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
                 $this -> test_mode
             );
         }
-    }
-
-    public function order_action_esunacq_query_status ( $order ) {
-        if ( $order -> get_payment_method() == $this -> id ){
-            $esun_order_id = get_post_meta( $order -> id, '_esunacq_orderid', true );
-            $Qres = $this -> request_builder -> request_query( $esun_order_id );
-            $QDATA = $this -> get_api_DATA( $Qres );
-            if ($QDATA[ 'returnCode' ] == '00' ){
-                $QtxnData = $QDATA[ 'txnData' ];
-                if ( !$this -> check_MID_ONO( $QtxnData, $order, $esun_order_id, '查詢' ) ){
-                    $order_note = sprintf( __( 'Query Failed: %s', 'esunacq' ), ReturnMesg::CODE[ $QDATA[ 'returnCode' ] ] );
-                    $order -> add_order_note( $order_note, true );
-                    return;
-                }
-                else {
-                    switch ($QDATA[ 'returnCode' ]) {
-                        case "00":
-                            $order -> update_status( 'processing' );
-                            break;
-                        case "49":
-                            $order -> update_status( 'refunded' );
-                            break;
-                    }
-                    $order_note = sprintf( __( 'Query Result: %s', 'esunacq' ), ReturnMesg::CODE[ $QDATA[ 'returnCode' ] ] );
-                    $order -> add_order_note( $order_note, true );
-                    return;
-                }
-            }
-            else{
-                $order_note .= sprintf( __( 'Query Failed: %s', 'esunacq' ), ReturnMesg::CODE[ $QDATA[ 'returnCode' ] ] );
-                $order->add_order_note( $order_note, true );
-                return;
-            }
-        }
-        return;
     }
 
     public function init() {
@@ -118,6 +82,41 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
         return false;
     }
 
+    public function order_action_esunacq_query_status ( $order ) {
+        if ( $order -> get_payment_method() == $this -> id ){
+            $esun_order_id = get_post_meta( $order -> id, '_esunacq_orderid', true );
+            $Qres = $this -> request_builder -> request_query( $esun_order_id );
+            $QDATA = $this -> get_api_DATA( $Qres );
+            if ($QDATA[ 'returnCode' ] == '00' ){
+                $QtxnData = $QDATA[ 'txnData' ];
+                if ( !$this -> check_MID_ONO( $QtxnData, $order, $esun_order_id ) ){
+                    $order_note = sprintf( __( 'Query Failed: %s', 'esunacq' ), ReturnMesg::CODE[ $QDATA[ 'returnCode' ] ] );
+                    $order -> add_order_note( $order_note, true );
+                    return;
+                }
+                else {
+                    switch ($QDATA[ 'returnCode' ]) {
+                        case "00":
+                            $order -> update_status( 'processing' );
+                            break;
+                        case "49":
+                            $order -> update_status( 'refunded' );
+                            break;
+                    }
+                    $order_note = sprintf( __( 'Query Result: %s', 'esunacq' ), ReturnMesg::CODE[ $QDATA[ 'returnCode' ] ] );
+                    $order -> add_order_note( $order_note, true );
+                    return;
+                }
+            }
+            else{
+                $order_note = sprintf( __( 'Query Failed: %s', 'esunacq' ), ReturnMesg::CODE[ $QDATA[ 'returnCode' ] ] );
+                $order -> add_order_note( $order_note, true );
+                return;
+            }
+        }
+        return;
+    }
+
     public function make_order_form_data() {
         if (array_key_exists('order_id', $_GET)){
             $order_id = $_GET['order_id'];
@@ -131,20 +130,22 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
         $amount = ceil( $order -> get_total() );
         $res = $this -> request_builder -> json_order( $new_order_id, $amount, 'http://nuan.vatroc.net/wc-api/wc_gateway_esunacq/' );
 
-        echo sprintf( "thankyou_order_received_text: %s<br>", $this -> get_option( 'thankyou_order_received_text' ) );
+        // echo sprintf( "thankyou_order_received_text: %s<br>", $this -> get_option( 'thankyou_order_received_text' ) );
 
         echo sprintf( "
+            <p>%s</p>
             <form id='esunacq' method='post' action='%s'>
                 <input type='text' hidden name='data' value='%s' />
                 <input type='text' hidden name='mac' value='%s' />
                 <input type='text' hidden name='ksn' value='1' />
-                <button>submit</button>
+                <!-- <button>submit</button> -->
             </form>
             <script>
                 var esunacq_form = document.getElementById('esunacq');
-                // esunacq_form.submit();
+                esunacq_form.submit();
             </script>
             ",
+            __( 'Redirecting to Esun Bank. Do not refresh or close the window.', 'esunacq' ),
             $this -> request_builder -> get_endpoint( 'PC_AUTHREQ' ),
             $res['data'],
             $res['mac']
@@ -208,7 +209,7 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
 
     private function refund_success( $order, $DATA, $esun_order_id ){
         $txnData = $DATA[ 'txnData' ];
-        if ( !$this -> check_MID_ONO( $txnData, $order, $esun_order_id, '退款' ) ){
+        if ( !$this -> check_MID_ONO( $txnData, $order, $esun_order_id ) ){
             return false;
         }
         if ( $txnData[ 'RC' ] == "00" ){
@@ -234,23 +235,23 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
         $QDATA = $this -> get_api_DATA( $Qres );
         if ($QDATA[ 'returnCode' ] == '00' ){
             $QtxnData = $QDATA[ 'txnData' ];
-            if ( !$this -> check_MID_ONO( $QtxnData, $order, $esun_order_id, '查詢' ) ){
+            if ( !$this -> check_MID_ONO( $QtxnData, $order, $esun_order_id ) ){
                 return false;
             }
             if ( $QtxnData[ 'RC' ] == '49' ){
                 $order -> update_status( 'refunded' );
                 $refund_note .= __( 'Refunded<br>', 'esunacq' );
-                $order->add_order_note( $refund_note, true );
+                $order -> add_order_note( $refund_note, true );
                 return false;
             }
         }
         else{
             $refund_note .= sprintf( __( 'Query failed: %s', 'esunacq' ), ReturnMesg::CODE[ $QDATA[ 'returnCode' ] ] );
-            $order->add_order_note( $refund_note, true );
+            $order -> add_order_note( $refund_note, true );
             return false;
         }
 
-        $order->add_order_note( $refund_note, true );
+        $order -> add_order_note( $refund_note, true );
         return false;
     }
 }

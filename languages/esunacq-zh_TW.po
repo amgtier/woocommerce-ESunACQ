@@ -5,8 +5,8 @@ msgstr ""
 "Project-Id-Version: WooCommerce - ESun ACQ 0.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/woocommerce-"
 "ESunACQ\n"
-"POT-Creation-Date: 2020-11-09T04:43:53+08:00\n"
-"PO-Revision-Date: 2020-11-09 04:51+0800\n"
+"POT-Creation-Date: 2020-11-09T16:03:56+08:00\n"
+"PO-Revision-Date: 2020-11-09 16:05+0800\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: zh\n"
@@ -33,6 +33,10 @@ msgstr "趙子翔"
 msgid "https://github.com/amgtier"
 msgstr ""
 
+#: esunacq.php:42
+msgid "Query Order Status"
+msgstr "查詢訂單狀態"
+
 #: includes/ESunACQBase.php:32
 msgid "Awaiting %s Payment"
 msgstr "等待 %s 付款"
@@ -57,11 +61,7 @@ msgstr "特店代碼錯誤"
 msgid "Store ID Incorrect, got: %s"
 msgstr "特店代碼錯誤：%s"
 
-#: includes/ESunACQBase.php:92
-msgid "Order No. Not Found."
-msgstr "查無訂單編號。"
-
-#: includes/ESunACQBase.php:93
+#: includes/ESunACQBase.php:92 includes/ESunACQBase.php:93
 msgid "Order No. Not Found"
 msgstr "查無訂單編號"
 
@@ -69,71 +69,75 @@ msgstr "查無訂單編號"
 msgid "MID(%s) or ONO(%s) Error. Refund failed.<br>"
 msgstr "MID(%s) 或 ONO(%s) 錯誤。退款失敗。br>"
 
-#: includes/ESunACQGateway.back.php:46 includes/ESunACQGateway.php:78
+#: includes/ESunACQGateway.back.php:46 includes/ESunACQGateway.php:42
 #: includes/ESunACQSettings.php:51
 msgid "ESun ACQ"
 msgstr "玉山銀行"
 
-#: includes/ESunACQGateway.back.php:47 includes/ESunACQGateway.php:79
+#: includes/ESunACQGateway.back.php:47 includes/ESunACQGateway.php:43
 msgid "Credit Card Payment with ESun Bank."
 msgstr "使用玉山銀行線上刷卡。"
 
-#: includes/ESunACQGateway.php:47 includes/ESunACQGateway.php:66
-msgid "Query Failed: %s"
-msgstr "查詢失敗：%s"
-
-#: includes/ESunACQGateway.php:60
-msgid "Query Result: %s"
-msgstr "查詢結果：%s"
-
-#: includes/ESunACQGateway.php:114 includes/UnionPayGateway.php:206
+#: includes/ESunACQGateway.php:78
 msgid "Refund failed: %s"
 msgstr "退款失敗：%s"
 
-#: includes/ESunACQGateway.php:159
+#: includes/ESunACQGateway.php:93 includes/ESunACQGateway.php:112
+msgid "Query Failed: %s"
+msgstr "查詢失敗：%s"
+
+#: includes/ESunACQGateway.php:106
+msgid "Query Result: %s"
+msgstr "查詢結果：%s"
+
+#: includes/ESunACQGateway.php:148 includes/UnionPayGateway.php:125
+msgid "Redirecting to Esun Bank. Do not refresh or close the window."
+msgstr "導向至 玉山銀行，請勿「重新整理」或「關閉」頁面。"
+
+#: includes/ESunACQGateway.php:160
 msgid "Data Not Found"
 msgstr "查無資料"
 
-#: includes/ESunACQGateway.php:184 includes/ESunACQGateway.php:185
-#: includes/UnionPayGateway.php:161 includes/UnionPayGateway.php:162
+#: includes/ESunACQGateway.php:185 includes/ESunACQGateway.php:186
+#: includes/UnionPayGateway.php:162 includes/UnionPayGateway.php:163
 msgid "%s No Not Found."
 msgstr "查無編號：%s。"
 
-#: includes/ESunACQGateway.php:193
+#: includes/ESunACQGateway.php:194
 msgid "Pay by credit card. (At once)"
 msgstr "信用卡 付款（一次付清）"
 
-#: includes/ESunACQGateway.php:196
+#: includes/ESunACQGateway.php:197
 msgid "<br>Digits: %s"
 msgstr "<br>信用卡號碼：%s"
 
-#: includes/ESunACQGateway.php:215
+#: includes/ESunACQGateway.php:216
 #, fuzzy
 msgid "Transaction date: %s<br>"
 msgstr "訂單交易日期: %s<br>"
 
-#: includes/ESunACQGateway.php:216
+#: includes/ESunACQGateway.php:217
 msgid "Transaction time: %s<br>"
 msgstr "訂單交易時間: %s<br>"
 
-#: includes/ESunACQGateway.php:217
+#: includes/ESunACQGateway.php:218
 msgid "Bill serial: %s<br>"
 msgstr "簽單序號: %s<br>"
 
-#: includes/ESunACQGateway.php:218
+#: includes/ESunACQGateway.php:219
 msgid "Authorization Code: %s<br>"
 msgstr "授權碼: %s<br>"
 
-#: includes/ESunACQGateway.php:224 includes/ESunACQGateway.php:231
-#: includes/UnionPayGateway.php:224 includes/UnionPayGateway.php:231
+#: includes/ESunACQGateway.php:225 includes/ESunACQGateway.php:232
+#: includes/UnionPayGateway.php:198
 msgid "Refund failed: %s<br>"
 msgstr "退款失敗：%s <br>"
 
-#: includes/ESunACQGateway.php:242
+#: includes/ESunACQGateway.php:243
 msgid "Refunded<br>"
 msgstr "已退款<br>"
 
-#: includes/ESunACQGateway.php:248
+#: includes/ESunACQGateway.php:249
 msgid "Query failed: %s"
 msgstr "查詢失敗：%s"
 
@@ -147,65 +151,85 @@ msgid ""
 "are nonempty."
 msgstr "在<code>特店代碼</code>與<code>Mac Key</code>有填值時才有效。"
 
-#: includes/ESunACQSettings.php:30 includes/ESunACQSettings.php:32
-#: includes/UnionPaySettings.php:30 includes/UnionPaySettings.php:32
+#: includes/ESunACQSettings.php:30 includes/UnionPaySettings.php:30
 msgid "Store ID"
 msgstr "特店代碼"
 
-#: includes/ESunACQSettings.php:36 includes/ESunACQSettings.php:38
-#: includes/UnionPaySettings.php:36 includes/UnionPaySettings.php:38
+#: includes/ESunACQSettings.php:32 includes/UnionPaySettings.php:32
+msgid "Store ID provided by ESun Bank"
+msgstr "玉山銀行提供之特店代碼"
+
+#: includes/ESunACQSettings.php:36 includes/UnionPaySettings.php:36
 msgid "Mac Key"
 msgstr ""
 
-#: includes/ESunACQSettings.php:42
+#: includes/ESunACQSettings.php:38 includes/UnionPaySettings.php:38
+msgid "Mac Key provided by ESun Bank"
+msgstr "玉山銀行提供之Mac Key"
+
+#: includes/ESunACQSettings.php:42 includes/UnionPaySettings.php:42
 msgid "Mac Key for Test Mode"
 msgstr "測試模式Mac Key"
 
-#: includes/ESunACQSettings.php:44
-msgid "Mac key for test mode."
-msgstr "測試模式使用之Mac Key。"
+#: includes/ESunACQSettings.php:44 includes/UnionPaySettings.php:44
+msgid "Mac Key for testing provided by ESun Bank"
+msgstr "玉山銀行提供之測試模式Mac Key"
 
-#: includes/ESunACQSettings.php:50 includes/UnionPaySettings.php:44
-msgid "This controls the title which the user sees during checkout."
-msgstr "此項目控制使用者在結帳時會看到的付款方式。"
+#: includes/ESunACQSettings.php:50 includes/UnionPaySettings.php:50
+msgid "This controls the title which the user sees during checkout"
+msgstr "此項目控制使用者在結帳時會看到的付款方式"
 
-#: includes/ESunACQSettings.php:61 includes/UnionPaySettings.php:55
+#: includes/ESunACQSettings.php:61 includes/UnionPaySettings.php:61
 msgid "Test Mode"
 msgstr "測試模式"
 
-#: includes/ESunACQSettings.php:64 includes/UnionPaySettings.php:58
+#: includes/ESunACQSettings.php:64 includes/UnionPaySettings.php:64
 msgid "Enable the sandbox mode"
 msgstr "啟用測試模式"
 
-#: includes/ESunACQSettings.php:68 includes/UnionPaySettings.php:62
+#: includes/ESunACQSettings.php:68 includes/UnionPaySettings.php:68
 msgid "Save Logs"
 msgstr "儲存記錄"
 
-#: includes/ESunACQSettings.php:71 includes/UnionPaySettings.php:65
+#: includes/ESunACQSettings.php:71 includes/UnionPaySettings.php:71
 msgid "Enable logging at %1s"
 msgstr "啟動紀錄於：%1s"
 
-#: includes/ESunACQSettings.php:75 includes/UnionPaySettings.php:69
+#: includes/ESunACQSettings.php:75 includes/UnionPaySettings.php:75
 msgid "Store Card Digits"
 msgstr "儲存信用卡號碼"
 
-#: includes/ESunACQSettings.php:78 includes/UnionPaySettings.php:72
+#: includes/ESunACQSettings.php:78 includes/UnionPaySettings.php:78
 msgid ""
 "Save the first 6 and last 4 digits of buyer's card number at order note."
 msgstr "儲存信用卡之「前6碼」以及「後4碼」"
 
-#: includes/UnionPayGateway.php:50 includes/UnionPaySettings.php:45
+#: includes/UnionPayGateway.php:49 includes/UnionPaySettings.php:51
 msgid "UnionPay"
 msgstr "聯銀卡"
 
-#: includes/UnionPayGateway.php:51
+#: includes/UnionPayGateway.php:50
 msgid "Credit Card Payment with UnionPay."
 msgstr "使用聯銀卡線上刷卡。"
 
-#: includes/UnionPayGateway.php:170
+#: includes/UnionPayGateway.php:171
 msgid "Pay by UnionPay (At once)"
 msgstr "銀聯信用卡 付款（一次付清）"
 
-#: includes/UnionPayGateway.php:218
+#: includes/UnionPayGateway.php:192
 msgid "Transaction Serial: %s <br>Refund succeeded."
 msgstr "交易編號：%s<br>退款成功。"
+
+#~ msgid "Order No. Not Found."
+#~ msgstr "查無訂單編號。"
+
+#~ msgid "Mac Keyprovided by ESun Bank"
+#~ msgstr "玉山銀行提供之Mac Key"
+
+#~ msgid "Mac key for test mode provided by ESun Bank"
+#~ msgstr "測試模式使用之Mac Key"
+
+#, fuzzy
+#~| msgid "Mac Key for Test Mode"
+#~ msgid "Mac Key Test"
+#~ msgstr "測試模式Mac Key"

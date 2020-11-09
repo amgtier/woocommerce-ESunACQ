@@ -39,7 +39,7 @@ function esunacq_gateway_init(){
     }
 
     function order_actions ( $arr ) {
-        $arr[ 'esunacq_query_status' ] = __( 'Query Order Status' );
+        $arr[ 'esunacq_query_status' ] = __( 'Query Order Status', 'esunacq' );
         return $arr;
     }
 
