@@ -158,7 +158,7 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
 
         if ( !array_key_exists('DATA', $_GET) ){
             wc_add_notice( __( 'Data Not Found', 'esunacq' ) , 'error' );
-            wp_redirect( '/' );
+            wp_redirect( '/cart' );
             exit;
         }
 
@@ -170,6 +170,8 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
 
         if ($DATA['RC'] != "00"){
             $this -> order_failed( $order, $DATA );
+            wp_redirect( '/cart' );
+            exit;
         }
         else{
             $this -> check_mac( $order, $_GET, $_GET[ 'DATA' ], 'MACD' );
