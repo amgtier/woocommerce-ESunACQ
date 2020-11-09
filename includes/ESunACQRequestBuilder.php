@@ -156,9 +156,10 @@ class ESunACQRequestBuilder {
     private function post_request( $endpoint, $data ) {
         $res = wp_remote_post( $endpoint, [
             'headers' => [
-                'User-Agent' => ''
+                'user-agent' => ''
             ],
-            'body' => $data
+            'body' => $data,
+            'timeout' => 45,
         ]);
         if (is_wp_error( $res )){
             error_log($res -> get_error_message() );

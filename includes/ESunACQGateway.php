@@ -90,12 +90,12 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
             if ($QDATA[ 'returnCode' ] == '00' ){
                 $QtxnData = $QDATA[ 'txnData' ];
                 if ( !$this -> check_MID_ONO( $QtxnData, $order, $esun_order_id ) ){
-                    $order_note = sprintf( __( 'Query Failed: %s', 'esunacq' ), ReturnMesg::CODE[ $QDATA[ 'returnCode' ] ] );
+                    $order_note = sprintf( __( 'Query Failed: %s', 'esunacq' ), ReturnMesg::CODE[ $QtxnData[ 'RC' ] ] );
                     $order -> add_order_note( $order_note, true );
                     return;
                 }
                 else {
-                    switch ($QDATA[ 'returnCode' ]) {
+                    switch ($QtxnData[ 'RC' ]) {
                         case "00":
                             $order -> update_status( 'processing' );
                             break;
@@ -103,7 +103,7 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
                             $order -> update_status( 'refunded' );
                             break;
                     }
-                    $order_note = sprintf( __( 'Query Result: %s', 'esunacq' ), ReturnMesg::CODE[ $QDATA[ 'returnCode' ] ] );
+                    $order_note = sprintf( __( 'Query Result: %s', 'esunacq' ), ReturnMesg::CODE[ $QtxnData[ 'RC' ] ] );
                     $order -> add_order_note( $order_note, true );
                     return;
                 }
@@ -222,7 +222,7 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
             return true;
         }
         else{
-            $refund_note .= sprintf( __( 'Refund failed: %s<br>', 'esunacq' ), ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
+            $refund_note .= sprintf( __( 'Refund failed: %s<br>', 'esunacq' ), ReturnMesg::CODE[ $DATA[ 'RC' ] ] );
             $order -> add_order_note( $refund_note, true );
             return false;
         }
@@ -242,7 +242,7 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
                 $order -> update_status( 'refunded' );
                 $refund_note .= __( 'Refunded<br>', 'esunacq' );
                 $order -> add_order_note( $refund_note, true );
-                return false;
+                return true;
             }
         }
         else{
