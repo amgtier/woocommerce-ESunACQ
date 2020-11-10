@@ -6,61 +6,76 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
 
-    public $store_id;
-    public $mac_key;
-    public $test_mode;
-    public $card_last_digits;
-    public $request_builder;
-    public $ESunHtml;
-    public static $log_enabled = false;
-    public static $log = false;
-    public static $customize_order_received_text;
-
     public function __construct() {
         parent::__construct();
 
         add_action( 'woocommerce_api_' . strtolower( get_class( $this ) ), array( $this, 'handle_response' ) );
 
         $this -> init();
-        if ( empty($this -> store_id) || ( empty( $this -> mac_key ) && empty( $this -> mac_key_test ) ) ){
+        if ( empty( $this -> store_id ) && ( empty( $this -> store_id_test ) ) || empty( $this -> mac_key ) && empty( $this -> mac_key_test ) ){
             $this -> enabled = 'no';
         }
         else {
             $this -> request_builder = new ESunACQRequestBuilder(
                 $this -> store_id,
+                $this -> store_id_test,
                 $this -> mac_key,
                 $this -> mac_key_test,
                 $this -> test_mode
             );
         }
+        if ( $this -> enabled == 'yes' && ( empty( $this -> store_id) || empty( $this -> mac_key ) ) ) {
+            $this -> test_mode = true;
+            $this -> title .= ' test';
+        }
     }
 
     public function order_action_esunacq_query_status ( $order ) {
         if ( $order -> get_payment_method() == $this -> id ){
-            
+            $order_id = $order -> get_id();
+            $esun_order_id  = get_post_meta( $order_id, '_' . $this -> id . '_orderid', true );
+            $Qres = $this -> request_builder -> up_request_query( $esun_order_id );
+            $QDATA = $this -> parse_returned_param( $Qres );
+            if ( !$this -> check_MID_ONO( $QtxnData, $order, $esun_order_id ) ){
+                return false;
+            }
+
+            $required_fields = [
+                'LTD' => 'LTD',
+                'LTT' => 'LTT',
+                'TRACENUMBER' => 'TRACENUMBER',
+                'TRACETIME' => 'TRACETIME',
+                'TXNNO' => 'TXNNO',
+            ];
+            $order_note = '';
+            foreach ( $required_fields as $key => $name ){
+                $order_note .= sprintf( '<br>%s：%s', $key, $_GET[ $key ] );
+            }
+            $order_note .= sprintf( __( 'UnionPay Status: %s <br>', 'esunacq' ), ReturnMesg::UP_CODE[ $QDATA[ 'RC' ] ]);
+            $order -> add_order_note( $order_note, true );
         }
         return;
     }
 
     public function init() {
-        $this -> id = 'esunionpay';
-        $this -> icon = apply_filters( 'woocommerce_' . $this -> id . '_icon', plugins_url('images/unionpay_logo.png', dirname( __FILE__ ) ) );
-        $this -> has_fields = false;
-        $this -> method_title = __( 'UnionPay', 'esunacq' );
+        $this -> id             = 'esunionpay';
+        $this -> icon           = apply_filters( 'woocommerce_' . $this -> id . '_icon', plugins_url('images/unionpay_logo.png', dirname( __FILE__ ) ) );
+        $this -> has_fields     = false;
+        $this -> method_title   = __( 'UnionPay', 'esunacq' );
         $this -> method_description = __( 'Credit Card Payment with UnionPay.', 'esunacq' );
-        $this -> supports = array( 'products', 'refunds' );
+        $this -> supports       = array( 'products', 'refunds' );
 
-        $this -> form_fields = WC_Gateway_ESunACQ_Settings::form_fields();
+        $this -> form_fields    = WC_Gateway_ESUnionPay_Settings::form_fields();
 
         $this -> enabled        = $this -> get_option( 'enabled' );
         $this -> title          = $this -> get_option( 'title' );
         $this -> description    = $this -> get_option( 'description' );
         $this -> store_id       = $this -> get_option( 'store_id' );
+        $this -> store_id_test  = $this -> get_option( 'store_id_test' );
         $this -> mac_key        = $this -> get_option( 'mac_key' );
+        $this -> mac_key_test   = $this -> get_option( 'mac_key_test' );
         $this -> test_mode      = ( $this -> get_option( 'test_mode' ) ) === 'yes' ? true : false;
-        $this -> store_card_digits = ( $this -> get_option( 'store_card_digits' ) === 'yes' ) ? true : false;
         self::$log_enabled      = ( $this -> get_option( 'logging' ) ) === 'yes' ? true : false;
-        self::$customize_order_received_text = $this -> get_option( 'thankyou_order_received_text' );
 
         $this -> get_order_from_data = $this -> id . '_get_order_form_data';
         add_action( 'woocommerce_api_' . $this -> get_order_from_data , array( $this, 'make_order_form_data' ) );
@@ -84,7 +99,7 @@ class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
             // return false;
         }
         else{
-            $refund_note = sprintf( __( 'Refund failed: %s' ), ReturnMesg::UP_CODE[ $DATA[ 'RC' ] ] );
+            $refund_note = sprintf( __( 'Refund Failed: %s', 'esunacq' ), ReturnMesg::UP_CODE[ $DATA[ 'RC' ] ] );
             $order->add_order_note( $refund_note, true );
             return false;
         }            
@@ -115,14 +130,14 @@ class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
                 <input type='text' hidden name='U' value='%s' />
                 <input type='text' hidden name='TXNNO' value='%s' />
                 <input type='text' hidden name='M' value='%s' />
-                <button>submit</button>
+                <!-- <button>submit</button> -->
             </form>
             <script>
                 var esunacq_form = document.getElementById('esunacq');
-                // esunacq_form.submit();
+                esunacq_form.submit();
             </script>
             ",
-            __( 'Redirecting to Esun Bank. Do not refresh or close the window.', 'esunacq' ),
+            __( 'Redirecting to UnionPay. Do not refresh or close the window.', 'esunacq' ),
             $this -> request_builder -> get_endpoint( 'UNIONPAY' ),
             $res[ 'MID' ],
             $res[ 'CID' ],
@@ -157,7 +172,7 @@ class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
             'TXNNO' => 'TXNNO',
         ];
         foreach ( $required_fields as $key => $name ){
-            if (!array_key_exists( $key, $_GET )){
+            if ( !array_key_exists( $key, $_GET ) ){
                 $order -> update_status( 'failed' );
                 wc_add_notice( sprintf( __( '%s No Not Found.', 'esunacq' ), $name), 'error' );
                 $this -> log( sprintf( __( '%s No Not Found.', 'esunacq' ), $name) );
@@ -173,8 +188,8 @@ class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
             $pay_type_note .= sprintf( '<br>%s：%s', $key, $_GET[ $key ] );
         }
 
-        add_post_meta( $order_id, '_' . $this -> id . '_orderid', $_GET['ONO'] );
-        add_post_meta( $order_id, '_' . $this -> id . '_txnno'  , $_GET['TXNNO'] );
+        add_post_meta( $order_id, '_' . $this -> id . '_orderid', $_GET[ 'ONO' ] );
+        add_post_meta( $order_id, '_' . $this -> id . '_txnno'  , $_GET[ 'TXNNO' ] );
 
         $order -> add_order_note( $pay_type_note, true );
         $order -> update_status( 'processing' );
@@ -195,26 +210,26 @@ class WC_Gateway_ESUnionPay extends WC_Gateway_ESunACQBase {
             return true;
         }
         else{
-            $refund_note .= sprintf( __( 'Refund failed: %s<br>', 'esunacq' ), ReturnMesg::UP_CODE[ $DATA[ 'RC' ] ] );
-            $order->add_order_note( $refund_note, true );
+            $refund_note .= sprintf( __( 'Refund Failed: %s<br>', 'esunacq' ), ReturnMesg::UP_CODE[ $DATA[ 'RC' ] ] );
+            $order -> add_order_note( $refund_note, true );
             return false;
         }
     }
 
-    private function refund_query( $order, $esun_order_id ){
-        $Qres = $this -> request_builder -> request_query( $esun_order_id );
+    private function handle_query( $order, $esun_order_id ){
+        $Qres = $this -> request_builder -> up_request_query( $esun_order_id );
         $QDATA = $this -> parse_returned_param( $Qres );
         if ($QDATA[ 'RC' ] == '00' ){
             if ( !$this -> check_MID_ONO( $QtxnData, $order, $esun_order_id ) ){
                 return false;
             }
-            $refund_note .= sprintf( __( 'UnionPay Status: %s <br>' ), ReturnMesg::UP_CODE[ $QDATA[ 'RC' ] ]);
-            $order->add_order_note( $refund_note, true );
+            $refund_note .= sprintf( __( 'UnionPay Status: %s <br>', 'esunacq' ), ReturnMesg::UP_CODE[ $QDATA[ 'RC' ] ]);
+            $order -> add_order_note( $refund_note, true );
             return false;
         }
         else{
-            $refund_note = sprintf( '查詢失敗：%s', ReturnMesg::UP_CODE[ $QDATA[ 'RC' ] ] );
-            $order->add_order_note( $refund_note, true );
+            $refund_note = sprintf( __( 'Query Failed: %s' ), ReturnMesg::UP_CODE[ $QDATA[ 'RC' ] ] );
+            $order -> add_order_note( $refund_note, true );
             return false;
         }
 

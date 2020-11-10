@@ -5,7 +5,7 @@
  * Author: Tzu-Hsiang Chao
  * Author URI: https://github.com/amgtier
  * Description: ESun ACQ for WooCommerce
- * Version: 0.1
+ * Version: 1.0
  * Text Domain: esunacq
  * Domain Path: /languages/
 */
@@ -25,7 +25,11 @@ function esunacq_gateway_init(){
     require_once 'includes/ESunACQGateway.php';
     require_once 'includes/UnionPayGateway.php';
     require_once 'includes/ESunACQSettings.php';
+    require_once 'includes/UnionPaySettings.php';
     require_once 'includes/ESunACQRequestBuilder.php';
+    require_once 'includes/TxnType.php';
+    require_once 'includes/Endpoint.php';
+    require_once 'includes/ReturnMesg.php';
 
     new WC_ESunACQ();
 

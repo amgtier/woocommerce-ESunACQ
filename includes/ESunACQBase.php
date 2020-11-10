@@ -5,22 +5,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class WC_Gateway_ESunACQBase extends WC_Payment_Gateway {
-
-    public $store_id;
-    public $mac_key;
-    public $mac_key_test;
-    public $test_mode;
-    public $card_last_digits;
-    public $request_builder;
-    public $ESunHtml;
+    
     public static $log_enabled = false;
     public static $log = false;
     public static $order_recv_text;
     protected $len_ono_prefix = 16; # AWYYYYMMDDHHMMSS
 
     public function __construct() {
-        require_once 'Endpoint.php';
-        require_once 'ReturnMesg.php';
         add_filter( 'https_ssl_verify', '__return_false' );
         add_action( 'woocommerce_order_action_esunacq_query_status', array( $this, 'order_action_esunacq_query_status' ) );
     }
@@ -126,7 +117,7 @@ class WC_Gateway_ESunACQBase extends WC_Payment_Gateway {
         wc_add_notice( sprintf( '%s', ReturnMesg::CODE[ $DATA[ 'RC' ] ] ), 'error' );
         $this -> log( sprintf( '%s', ReturnMesg::CODE[ $DATA[ 'RC' ] ] ) );
         $this -> log( $DATA );
-        exit;
+        // exit;
     }
 }
 

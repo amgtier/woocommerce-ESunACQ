@@ -2,14 +2,14 @@
 # This file is distributed under the same license as the WooCommerce - ESun ACQ plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: WooCommerce - ESun ACQ 0.1\n"
+"Project-Id-Version: WooCommerce - ESun ACQ 1.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/woocommerce-ESunACQ\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2020-11-09T16:03:56+08:00\n"
+"POT-Creation-Date: 2020-11-11T00:08:59+08:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.4.0\n"
 "X-Domain: esunacq\n"
@@ -30,210 +30,223 @@ msgstr ""
 msgid "https://github.com/amgtier"
 msgstr ""
 
-#: esunacq.php:42
+#: esunacq.php:46
 msgid "Query Order Status"
 msgstr ""
 
-#: includes/ESunACQBase.php:32
+#: includes/ESunACQBase.php:23
 msgid "Awaiting %s Payment"
 msgstr ""
 
-#: includes/ESunACQBase.php:53
+#: includes/ESunACQBase.php:44
 msgid " Not Found."
 msgstr ""
 
-#: includes/ESunACQBase.php:59
-#: includes/ESunACQBase.php:60
+#: includes/ESunACQBase.php:50
+#: includes/ESunACQBase.php:51
 msgid "Inconsistent "
 msgstr ""
 
-#: includes/ESunACQBase.php:80
+#: includes/ESunACQBase.php:71
 msgid "Return Code Not Found"
 msgstr ""
 
-#: includes/ESunACQBase.php:85
+#: includes/ESunACQBase.php:76
 msgid "Store ID Incorrect"
 msgstr ""
 
-#: includes/ESunACQBase.php:86
+#: includes/ESunACQBase.php:77
 msgid "Store ID Incorrect, got: %s"
 msgstr ""
 
-#: includes/ESunACQBase.php:92
-#: includes/ESunACQBase.php:93
+#: includes/ESunACQBase.php:83
+#: includes/ESunACQBase.php:84
 msgid "Order No. Not Found"
 msgstr ""
 
-#: includes/ESunACQBase.php:113
+#: includes/ESunACQBase.php:104
 msgid "MID(%s) or ONO(%s) Error. Refund failed.<br>"
 msgstr ""
 
 #: includes/ESunACQGateway.back.php:46
-#: includes/ESunACQGateway.php:42
-#: includes/ESunACQSettings.php:51
+#: includes/ESunACQGateway.php:37
+#: includes/ESunACQSettings.php:54
 msgid "ESun ACQ"
 msgstr ""
 
 #: includes/ESunACQGateway.back.php:47
-#: includes/ESunACQGateway.php:43
+#: includes/ESunACQGateway.php:38
 msgid "Credit Card Payment with ESun Bank."
 msgstr ""
 
-#: includes/ESunACQGateway.php:78
-msgid "Refund failed: %s"
+#: includes/ESunACQGateway.php:73
+#: includes/UnionPayGateway.php:82
+msgid "Refund Failed: %s"
 msgstr ""
 
-#: includes/ESunACQGateway.php:93
-#: includes/ESunACQGateway.php:112
+#: includes/ESunACQGateway.php:88
+#: includes/ESunACQGateway.php:107
+#: includes/ESunACQGateway.php:244
 msgid "Query Failed: %s"
 msgstr ""
 
-#: includes/ESunACQGateway.php:106
+#: includes/ESunACQGateway.php:101
 msgid "Query Result: %s"
 msgstr ""
 
-#: includes/ESunACQGateway.php:148
-#: includes/UnionPayGateway.php:125
-msgid "Redirecting to Esun Bank. Do not refresh or close the window."
+#: includes/ESunACQGateway.php:141
+msgid "Redirecting to ESun Bank. Do not refresh or close the window."
 msgstr ""
 
-#: includes/ESunACQGateway.php:160
+#: includes/ESunACQGateway.php:153
 msgid "Data Not Found"
 msgstr ""
 
-#: includes/ESunACQGateway.php:185
-#: includes/ESunACQGateway.php:186
-#: includes/UnionPayGateway.php:162
-#: includes/UnionPayGateway.php:163
+#: includes/ESunACQGateway.php:180
+#: includes/ESunACQGateway.php:181
+#: includes/UnionPayGateway.php:157
+#: includes/UnionPayGateway.php:158
 msgid "%s No Not Found."
 msgstr ""
 
-#: includes/ESunACQGateway.php:194
+#: includes/ESunACQGateway.php:189
 msgid "Pay by credit card. (At once)"
 msgstr ""
 
-#: includes/ESunACQGateway.php:197
+#: includes/ESunACQGateway.php:192
 msgid "<br>Digits: %s"
 msgstr ""
 
-#: includes/ESunACQGateway.php:216
-msgid "Transaction date: %s<br>"
+#: includes/ESunACQGateway.php:211
+msgid "Transaction Date: %s<br>"
 msgstr ""
 
-#: includes/ESunACQGateway.php:217
-msgid "Transaction time: %s<br>"
+#: includes/ESunACQGateway.php:212
+msgid "Transaction Time: %s<br>"
 msgstr ""
 
-#: includes/ESunACQGateway.php:218
-msgid "Bill serial: %s<br>"
+#: includes/ESunACQGateway.php:213
+msgid "Bill Serial: %s<br>"
 msgstr ""
 
-#: includes/ESunACQGateway.php:219
+#: includes/ESunACQGateway.php:214
 msgid "Authorization Code: %s<br>"
 msgstr ""
 
-#: includes/ESunACQGateway.php:225
-#: includes/ESunACQGateway.php:232
-#: includes/UnionPayGateway.php:198
-msgid "Refund failed: %s<br>"
+#: includes/ESunACQGateway.php:220
+#: includes/ESunACQGateway.php:227
+#: includes/UnionPayGateway.php:193
+msgid "Refund Failed: %s<br>"
 msgstr ""
 
-#: includes/ESunACQGateway.php:243
+#: includes/ESunACQGateway.php:238
 msgid "Refunded<br>"
 msgstr ""
 
-#: includes/ESunACQGateway.php:249
-msgid "Query failed: %s"
-msgstr ""
-
-#: includes/ESunACQSettings.php:25
+#: includes/ESunACQSettings.php:22
 #: includes/UnionPaySettings.php:25
 msgid "Enable"
 msgstr ""
 
-#: includes/ESunACQSettings.php:26
+#: includes/ESunACQSettings.php:23
 #: includes/UnionPaySettings.php:26
 msgid "It is enabled only until both <code>Store ID</code> and <code>Mac Key</code> are nonempty."
 msgstr ""
 
-#: includes/ESunACQSettings.php:30
+#: includes/ESunACQSettings.php:27
 #: includes/UnionPaySettings.php:30
 msgid "Store ID"
 msgstr ""
 
-#: includes/ESunACQSettings.php:32
+#: includes/ESunACQSettings.php:29
 #: includes/UnionPaySettings.php:32
 msgid "Store ID provided by ESun Bank"
 msgstr ""
 
-#: includes/ESunACQSettings.php:36
+#: includes/ESunACQSettings.php:33
 #: includes/UnionPaySettings.php:36
+msgid "Store ID for Test Mode"
+msgstr ""
+
+#: includes/ESunACQSettings.php:35
+#: includes/UnionPaySettings.php:38
+msgid "Store ID for testing provided by ESun Bank"
+msgstr ""
+
+#: includes/ESunACQSettings.php:39
+#: includes/UnionPaySettings.php:42
 msgid "Mac Key"
 msgstr ""
 
-#: includes/ESunACQSettings.php:38
-#: includes/UnionPaySettings.php:38
+#: includes/ESunACQSettings.php:41
+#: includes/UnionPaySettings.php:44
 msgid "Mac Key provided by ESun Bank"
 msgstr ""
 
-#: includes/ESunACQSettings.php:42
-#: includes/UnionPaySettings.php:42
+#: includes/ESunACQSettings.php:45
+#: includes/UnionPaySettings.php:48
 msgid "Mac Key for Test Mode"
 msgstr ""
 
-#: includes/ESunACQSettings.php:44
-#: includes/UnionPaySettings.php:44
+#: includes/ESunACQSettings.php:47
+#: includes/UnionPaySettings.php:50
 msgid "Mac Key for testing provided by ESun Bank"
 msgstr ""
 
-#: includes/ESunACQSettings.php:50
-#: includes/UnionPaySettings.php:50
+#: includes/ESunACQSettings.php:53
+#: includes/UnionPaySettings.php:56
 msgid "This controls the title which the user sees during checkout"
 msgstr ""
 
-#: includes/ESunACQSettings.php:61
-#: includes/UnionPaySettings.php:61
+#: includes/ESunACQSettings.php:64
+#: includes/UnionPaySettings.php:67
 msgid "Test Mode"
 msgstr ""
 
-#: includes/ESunACQSettings.php:64
-#: includes/UnionPaySettings.php:64
+#: includes/ESunACQSettings.php:67
+#: includes/UnionPaySettings.php:70
 msgid "Enable the sandbox mode"
 msgstr ""
 
-#: includes/ESunACQSettings.php:68
-#: includes/UnionPaySettings.php:68
+#: includes/ESunACQSettings.php:71
+#: includes/UnionPaySettings.php:74
 msgid "Save Logs"
 msgstr ""
 
-#: includes/ESunACQSettings.php:71
-#: includes/UnionPaySettings.php:71
+#: includes/ESunACQSettings.php:74
+#: includes/UnionPaySettings.php:77
 msgid "Enable logging at %1s"
 msgstr ""
 
-#: includes/ESunACQSettings.php:75
-#: includes/UnionPaySettings.php:75
+#: includes/ESunACQSettings.php:78
 msgid "Store Card Digits"
 msgstr ""
 
-#: includes/ESunACQSettings.php:78
-#: includes/UnionPaySettings.php:78
+#: includes/ESunACQSettings.php:81
 msgid "Save the first 6 and last 4 digits of buyer's card number at order note."
 msgstr ""
 
-#: includes/UnionPayGateway.php:49
-#: includes/UnionPaySettings.php:51
+#: includes/UnionPayGateway.php:44
+#: includes/UnionPaySettings.php:57
 msgid "UnionPay"
 msgstr ""
 
-#: includes/UnionPayGateway.php:50
+#: includes/UnionPayGateway.php:45
 msgid "Credit Card Payment with UnionPay."
 msgstr ""
 
-#: includes/UnionPayGateway.php:171
+#: includes/UnionPayGateway.php:120
+msgid "Redirecting to UnionPay. Do not refresh or close the window."
+msgstr ""
+
+#: includes/UnionPayGateway.php:166
 msgid "Pay by UnionPay (At once)"
 msgstr ""
 
-#: includes/UnionPayGateway.php:192
+#: includes/UnionPayGateway.php:187
 msgid "Transaction Serial: %s <br>Refund succeeded."
+msgstr ""
+
+#: includes/UnionPayGateway.php:206
+msgid "UnionPay Status: %s <br>"
 msgstr ""

@@ -9,11 +9,9 @@ class ESunACQRequestBuilder {
     private $stord_id;
     private $mac_key;
 
-    public function __construct( $store_id, $mac_key, $mac_key_test, $test_mode=false ) {
-        require_once 'TxnType.php';
-        require_once 'Endpoint.php';
+    public function __construct( $store_id, $store_id_test, $mac_key, $mac_key_test, $test_mode=false ) {
 
-        $this -> store_id = $store_id;
+        $this -> store_id = $test_mode ? $store_id_test : $store_id;
         $this -> mac_key = $test_mode ? $mac_key_test : $mac_key;
         $this -> test_mode = $test_mode;
     }

@@ -5,56 +5,51 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
-
-    public $store_id;
-    public $mac_key;
-    public $test_mode;
-    public $card_last_digits;
-    public $request_builder;
-    public $ESunHtml;
-    public static $log_enabled = false;
-    public static $log = false;
-    public static $customize_order_received_text    ;
-
+    
     public function __construct() {
         parent::__construct();
         
         add_action( 'woocommerce_api_' . strtolower( get_class( $this ) ), array( $this, 'handle_response' ) );
 
         $this -> init();
-        if ( empty($this -> store_id) || ( empty( $this -> mac_key ) && empty( $this -> mac_key_test ) ) ){
+        if ( empty( $this -> store_id ) && ( empty( $this -> store_id_test ) ) || empty( $this -> mac_key ) && empty( $this -> mac_key_test ) ){
             $this -> enabled = 'no';
         }
         else {
             $this -> request_builder = new ESunACQRequestBuilder(
                 $this -> store_id,
+                $this -> store_id_test,
                 $this -> mac_key,
                 $this -> mac_key_test,
                 $this -> test_mode
             );
         }
+        if ( $this -> enabled == 'yes' && ( empty( $this -> store_id) || empty( $this -> mac_key ) ) ) {
+            $this -> test_mode = true;
+            $this -> title .= ' test';
+        }
     }
 
     public function init() {
-        $this -> id = 'esunacq';
-        $this -> icon = apply_filters( 'woocommerce_' . $this -> id . '_icon', plugins_url('images/esun_logo.png', dirname( __FILE__ ) ) );
-        $this -> has_fields = false;
-        $this -> method_title = __( 'ESun ACQ', 'esunacq' );
+        $this -> id             = 'esunacq';
+        $this -> icon           = apply_filters( 'woocommerce_' . $this -> id . '_icon', plugins_url('images/esun_logo.png', dirname( __FILE__ ) ) );
+        $this -> has_fields     = false;
+        $this -> method_title   = __( 'ESun ACQ', 'esunacq' );
         $this -> method_description = __( 'Credit Card Payment with ESun Bank.', 'esunacq' );
-        $this -> supports = array( 'products', 'refunds' );
+        $this -> supports       = array( 'products', 'refunds' );
 
-        $this -> form_fields = WC_Gateway_ESunACQ_Settings::form_fields();
+        $this -> form_fields    = WC_Gateway_ESunACQ_Settings::form_fields();
 
         $this -> enabled        = $this -> get_option( 'enabled' );
         $this -> title          = $this -> get_option( 'title' );
         $this -> description    = $this -> get_option( 'description' );
         $this -> store_id       = $this -> get_option( 'store_id' );
+        $this -> store_id_test  = $this -> get_option( 'store_id_test' );
         $this -> mac_key        = $this -> get_option( 'mac_key' );
         $this -> mac_key_test   = $this -> get_option( 'mac_key_test' );
         $this -> test_mode      = ( $this -> get_option( 'test_mode' ) ) === 'yes' ? true : false;
         $this -> store_card_digits = ( $this -> get_option( 'store_card_digits' ) === 'yes' ) ? true : false;
         self::$log_enabled      = ( $this -> get_option( 'logging' ) ) === 'yes' ? true : false;
-        self::$customize_order_received_text = $this -> get_option( 'thankyou_order_received_text' );
         $this -> get_order_from_data = $this -> id .'_get_order_form_data';
         add_action( 'woocommerce_api_' . $this -> get_order_from_data , array( $this, 'make_order_form_data' ) );
         add_action( 'woocommerce_update_options_payment_gateways_' . $this -> id, array( $this, 'process_admin_options' ) );
@@ -75,7 +70,7 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
             return $this -> refund_failed_query( $order, $DATA, $esun_order_id );
         }
         else{
-            $refund_note = sprintf( __( 'Refund failed: %s', 'esunacq' ), ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
+            $refund_note = sprintf( __( 'Refund Failed: %s', 'esunacq' ), ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
             $order->add_order_note( $refund_note, true );
             return false;
         }
@@ -130,8 +125,6 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
         $amount = ceil( $order -> get_total() );
         $res = $this -> request_builder -> json_order( $new_order_id, $amount, get_home_url() . '/wc-api/wc_gateway_esunacq/' );
 
-        // echo sprintf( "thankyou_order_received_text: %s<br>", $this -> get_option( 'thankyou_order_received_text' ) );
-
         echo sprintf( "
             <p>%s</p>
             <form id='esunacq' method='post' action='%s'>
@@ -145,7 +138,7 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
                 esunacq_form.submit();
             </script>
             ",
-            __( 'Redirecting to Esun Bank. Do not refresh or close the window.', 'esunacq' ),
+            __( 'Redirecting to ESun Bank. Do not refresh or close the window.', 'esunacq' ),
             $this -> request_builder -> get_endpoint( 'PC_AUTHREQ' ),
             $res['data'],
             $res['mac']
@@ -162,18 +155,19 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
             exit;
         }
 
-        $DATA = $this -> parse_returned_param( $_GET['DATA'] );
+        $DATA = $this -> parse_returned_param( $_GET[ 'DATA' ] );
         $this -> check_RC_MID_ONO( $DATA );
 
-        $order_id = substr( $DATA['ONO'], $this -> len_ono_prefix );
+        $order_id = substr( $DATA[ 'ONO' ], $this -> len_ono_prefix );
         $order = new WC_Order( $order_id );
-
-        if ($DATA['RC'] != "00"){
+        // wp_redirect( '/cart' );
+        // http://nuan.vatroc.net/wc-api/wc_gateway_esunacq/?DATA=RC=GR,MID=8089027748,ONO=AW202011101631001554
+        if ( $DATA['RC'] != "00" ){
             $this -> order_failed( $order, $DATA );
             wp_redirect( '/cart' );
             exit;
         }
-        else{
+        else {
             $this -> check_mac( $order, $_GET, $_GET[ 'DATA' ], 'MACD' );
         }
 
@@ -182,7 +176,7 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
             'AIR' => 'AIR',
             'AN' => 'AN',
         ] as $key => $name ){
-            if (!array_key_exists( $key, $DATA )){
+            if ( !array_key_exists( $key, $DATA ) ){
                 $order -> update_status( 'failed' );
                 wc_add_notice( sprintf( __( '%s No Not Found.', 'esunacq' ), $name), 'error' );
                 $this -> log( sprintf( __( '%s No Not Found.', 'esunacq' ), $name) );
@@ -215,23 +209,23 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
             return false;
         }
         if ( $txnData[ 'RC' ] == "00" ){
-            $refund_note  = sprintf( __( 'Transaction date: %s<br>', 'esunacq' ), $txnData[ 'LTD' ]);
-            $refund_note .= sprintf( __( 'Transaction time: %s<br>', 'esunacq' ), $txnData[ 'LTT' ]);
-            $refund_note .= sprintf( __( 'Bill serial: %s<br>', 'esunacq' ), $txnData[ 'RRN' ]);
+            $refund_note  = sprintf( __( 'Transaction Date: %s<br>', 'esunacq' ), $txnData[ 'LTD' ]);
+            $refund_note .= sprintf( __( 'Transaction Time: %s<br>', 'esunacq' ), $txnData[ 'LTT' ]);
+            $refund_note .= sprintf( __( 'Bill Serial: %s<br>', 'esunacq' ), $txnData[ 'RRN' ]);
             $refund_note .= sprintf( __( 'Authorization Code: %s<br>', 'esunacq' ), $txnData[ 'AIR' ]);
             $order -> add_order_note( $refund_note, true );
             $order -> update_status( 'refunded' );
             return true;
         }
         else{
-            $refund_note .= sprintf( __( 'Refund failed: %s<br>', 'esunacq' ), ReturnMesg::CODE[ $DATA[ 'RC' ] ] );
+            $refund_note .= sprintf( __( 'Refund Failed: %s<br>', 'esunacq' ), ReturnMesg::CODE[ $DATA[ 'RC' ] ] );
             $order -> add_order_note( $refund_note, true );
             return false;
         }
     }
 
     private function refund_failed_query( $order, $DATA, $esun_order_id ){
-        $refund_note= sprintf( __( 'Refund failed: %s<br>', 'esunacq' ), ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
+        $refund_note= sprintf( __( 'Refund Failed: %s<br>', 'esunacq' ), ReturnMesg::CODE[ $DATA[ 'returnCode' ] ] );
 
         $Qres = $this -> request_builder -> request_query( $esun_order_id );
         $QDATA = $this -> get_api_DATA( $Qres );
@@ -248,7 +242,7 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
             }
         }
         else{
-            $refund_note .= sprintf( __( 'Query failed: %s', 'esunacq' ), ReturnMesg::CODE[ $QDATA[ 'returnCode' ] ] );
+            $refund_note .= sprintf( __( 'Query Failed: %s', 'esunacq' ), ReturnMesg::CODE[ $QDATA[ 'returnCode' ] ] );
             $order -> add_order_note( $refund_note, true );
             return false;
         }
