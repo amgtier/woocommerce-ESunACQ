@@ -35,6 +35,8 @@ function esunacq_gateway_init(){
 
     function esunacq_load_textdomain() {
         load_plugin_textdomain( 'esunacq', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
+    }
+
 
     function order_actions ( $arr ) {
         $arr[ 'esunacq_query_status' ] = __( 'Query Order Status', 'esunacq' );
@@ -42,5 +44,6 @@ function esunacq_gateway_init(){
     }
 
     add_action( 'plugins_loaded', 'esunacq_load_textdomain' );
+    add_filter('woocommerce_thankyou_order_received_text', 'esunacq_order_received_text', 10, 2);
     add_filter( 'woocommerce_order_actions', 'order_actions', 10, 2);
 }
