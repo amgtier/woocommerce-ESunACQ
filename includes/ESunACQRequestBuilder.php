@@ -111,12 +111,7 @@ class ESunACQRequestBuilder {
     }
 
     public function check_hash( $data, $mac ){
-        // error_log("my mac:");
-        // error_log($data . ',' . $this -> mac_key);
-        // error_log($this -> packs_esunacq( $data . ',' . $this -> mac_key ));
-        // error_log("their mac:");
-        // error_log($mac);
-        return $this -> packs_esunacq( $data . ',' . $this -> mac_key ) == $mac;
+        return $this -> packs_esunacq( $data, ',' ) == $mac;
     }
 
     private function pack( $ONO, $TA, $U, $IC, $BPF ) {
@@ -143,8 +138,8 @@ class ESunACQRequestBuilder {
         return $data;
     }
 
-    private function packs_esunacq( $data ) {
-        return hash( 'sha256', $data . $this -> mac_key );
+    private function packs_esunacq( $data, $join='' ) {
+        return hash( 'sha256', $data . $join . $this -> mac_key );
     }
 
     private function packs_esunionpay( $data ) {

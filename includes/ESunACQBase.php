@@ -45,7 +45,7 @@ class WC_Gateway_ESunACQBase extends WC_Payment_Gateway {
             wp_redirect( $order -> get_cancel_order_url() );
             exit;
         }
-        if ( false && !$this -> request_builder -> check_hash( $data, $urlparam[ $mfkey ] ) ){
+        if ( !$this -> request_builder -> check_hash( $data, $urlparam[ $mfkey ] ) ){
             $order -> update_status( 'failed' );
             wc_add_notice( __( 'Inconsistent ', 'esunacq' ) . $mfkey, 'error' );
             $this -> log( __( 'Inconsistent ', 'esunacq' ) . $mfkey );
