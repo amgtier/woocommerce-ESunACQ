@@ -25,6 +25,10 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
             );
         }
         if ( $this -> enabled == 'yes' && ( empty( $this -> store_id) || empty( $this -> mac_key ) ) ) {
+            $user = wp_get_current_user();
+            if ( !in_array( 'administrator', (array) $user->roles ) ){
+                $this -> enabled = 'no';
+            }
             $this -> test_mode = true;
             $this -> title .= ' test';
         }
@@ -160,8 +164,7 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
 
         $order_id = substr( $DATA[ 'ONO' ], $this -> len_ono_prefix );
         $order = new WC_Order( $order_id );
-        // wp_redirect( '/cart' );
-        // http://nuan.vatroc.net/wc-api/wc_gateway_esunacq/?DATA=RC=GR,MID=8089027748,ONO=AW202011101631001554
+
         if ( $DATA['RC'] != "00" ){
             $this -> order_failed( $order, $DATA );
             wp_redirect( '/cart' );
