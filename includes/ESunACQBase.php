@@ -28,8 +28,22 @@ class WC_Gateway_ESunACQBase extends WC_Payment_Gateway {
         );
     }
     
-    public static function log($message, $level = 'info')
+    public static function log($message, $level = 'info', $prefix=null, $identifier=null)
     {
+        $log_path = plugin_dir_path( __DIR__ ) . "LogESunACQ.txt";
+        if ( $level = 'debug' ){
+            if ( $prefix ) {
+                $prefix = "[" . $prefix . "]";
+            }
+            if ( $identifier ) {
+                $identifier = "[" . $identifier. "]";
+            }
+            if ( is_array( $message ) ){
+                error_log( sprintf( "[%s]%s%s: %s\n", date("Y/m/d H:i:s", time()), $prefix, $identifier, http_build_query( $message ) ), 3, $log_path);
+            } else {
+                error_log( sprintf( "[%s]%s%s: %s\n", date("Y/m/d H:i:s", time()), $prefix, $identifier, $message ), 3, $log_path);
+            }
+        }
         if (self::$log_enabled) {
             if (empty(self::$log)) {
                 self::$log = wc_get_logger();

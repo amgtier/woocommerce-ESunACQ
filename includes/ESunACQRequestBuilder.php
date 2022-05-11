@@ -31,7 +31,7 @@ class ESunACQRequestBuilder {
 
     public function json_order( $ONO, $TA, $U, $IC=null, $BPF=null ) {
         $data = [
-            'data' => json_encode( $this -> pack( $ONO, $TA, $U, $IC, $BPF ) )
+            'data' => json_encode( $this -> pack( $ONO, strval($TA), $U, $IC, $BPF ) )
         ];
         $data[ 'mac' ] = $this -> packs_esunacq( $data['data'] );
         $data[ 'ksn' ] = 1;

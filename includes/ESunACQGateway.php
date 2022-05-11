@@ -125,9 +125,10 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
         }
 
         $order = new WC_Order( $order_id );
-        $new_order_id = 'AW' . date('YmdHis') . $order -> get_order_number();
+        $new_order_id = 'AW' . date('ymdHis') . $order -> get_order_number();
         $amount = ceil( $order -> get_total() );
         $res = $this -> request_builder -> json_order( $new_order_id, $amount, get_home_url() . '/wc-api/wc_gateway_esunacq/' );
+        $this -> log( $res['data'], 'debug', 'ORDER', get_current_user_id());
 
         echo sprintf( "
             <p>%s</p>
@@ -165,6 +166,7 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
         $order_id = substr( $DATA[ 'ONO' ], $this -> len_ono_prefix );
         $order = new WC_Order( $order_id );
 
+        $this -> log( $_GET[ 'DATA' ], 'debug', 'DATA', get_current_user_id() );
         if ( $DATA['RC'] != "00" ){
             $this -> order_failed( $order, $DATA );
             $failure_redirect = "/checkout";
@@ -193,7 +195,8 @@ class WC_Gateway_ESunACQ extends WC_Gateway_ESunACQBase {
         wc_reduce_stock_levels( $order_id );
 
         $pay_type_note = __( 'Pay by credit card. (At once)', 'esunacq' );
-        $pay_type_note .= sprintf( '<br>RRN：%s', $DATA[ 'RRN' ] );
+        $pay_type_note .= sprintf( '<br>RRN: %s', $DATA[ 'RRN' ] );
+        $pay_type_note .= sprintf( '<br>訂單編號: %s', $DATA[ 'ONO' ] );
         if ( $this -> store_card_digits ){
             $pay_type_note .= sprintf( __( '<br>Digits: %s', 'esunacq' ), $DATA[ 'AN' ] );
         }
